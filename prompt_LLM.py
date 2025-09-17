@@ -48,35 +48,6 @@ def generate_daily_report(parsed_email, model="mistral"):
     Now generate the report exactly in this format. Keep it concise, avoid redundancy, and do not invent categories.
     """
 
-    # prompt = f"""
-    # You are tasked with generating a **structured daily report** from visitor interaction logs.
-    # The report must always follow this exact format with the following sections:
-
-    # # Daily Interaction Report ({parsed_email['date']})
-
-    # ## 1. Overview
-    # - Total Interactions: (count them)
-    # - Estimated Average Match Score: (calculate an approximate trend: low, medium, high)
-
-    # ## 2. Topics & Common Questions
-    # - Group similar questions under clear topic headings.
-    # - Provide representative questions and brief summarized answers.
-    # - Mention average match scores for each topic.
-
-    # ## 3. Match Score Analysis
-    # - Identify lowest scoring topics (knowledge gaps).
-    # - Identify highest scoring topics (well covered).
-
-    # ## 4. Notable Insights
-    # - Mention any trends, visitor interests, or unusual questions.
-    # - Suggest knowledge base improvements if needed.
-
-    # Here are the logs:
-    # {logs_text}
-
-    # Now generate the full structured report in the requested format.
-    # """
-
     # Call Ollama
     response = ollama.chat(
         model=model,
