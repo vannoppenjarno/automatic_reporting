@@ -1,0 +1,8 @@
+# ignore markdown files
+*.md
+
+# ignore json files
+*.json
+
+# ignore python cache files
+__pycache__/
