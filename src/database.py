@@ -56,9 +56,6 @@ def save_interactions(parsed_email, report_text, db_path: str = DB_PATH):
             log["answer"],
             float(log["match_score"].replace("%", "")),
             log["time"],
-            log.get("sentiment", None),  # placeholder, can extend later
-            log.get("language", None),   # placeholder
-            log.get("topic", None)       # placeholder
         ))
 
     # Insert or replace the daily report
