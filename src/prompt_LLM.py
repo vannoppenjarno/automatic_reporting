@@ -20,7 +20,12 @@ def generate_daily_report(parsed_email, model="mistral"):
 
     ## 1. Overview
     - Total Interactions: {len(parsed_email['logs'])}
-    - Average Match Score: {parsed_email['average_match']}
+    - Average Match Score: {parsed_email['average_match']}%
+    - Number of complete misses: {parsed_email['complete_misses']}
+    - Complete Misses Rate: {parsed_email['complete_misses_rate']}%
+    - Language trends: Detect and list which languages were used in the questions (approximate if needed).
+    - Visitor sentiment: Summarize overall sentiment (positive, neutral, negative).
+    - Peak interaction times: Identify busiest times of the day (morning, afternoon, evening).
 
     ## 2. Most Asked Topics & Common Questions
     - Group similar questions into clear topics.
@@ -28,17 +33,11 @@ def generate_daily_report(parsed_email, model="mistral"):
     - Do not repeat the same question multiple times.
     - Keep it short and concise.
 
-    ## 3. Language Trends
-    - Detect and list which languages were used in the questions (approximate if needed).
-
-    ## 4. Visitor Sentiment
-    - Summarize sentiment (positive, neutral, negative).
-
-    ## 5. Match Score Analysis
+    ## 3. Match Score Analysis
     - Identify lowest scoring topics (knowledge gaps).
     - Identify highest scoring topics (well covered).
 
-    ## 6. Notable Insights / Patterns
+    ## 4. Notable Insights / Patterns
     - Mention key trends, unusual questions, or repeated themes.
     - Suggest improvements to the knowledge base if needed.
 

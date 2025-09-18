@@ -1,0 +1,117 @@
+# Automatic Daily Reporting System
+
+This project automates the collection, analysis, and reporting of visitor interaction data. It fetches emails, parses visitor questions and answers, generates structured daily reports using a local LLM, stores the data in a local database, and saves formatted reports to disk.
+
+---
+
+## Features
+
+* **Automated Data Collection:** Fetches emails from Gmail and filters relevant messages based on subject and sender patterns.
+* **Email Parsing:** Extracts questions, answers, timestamps, and match scores from HTML email content.
+* **LLM-Powered Reports:** Generates concise, structured daily reports with insights, trends, and topic analysis using a local Ollama model.
+* **Database Integration:** Stores parsed interactions and reports in SQLite for easy querying and historical tracking.
+* **Customizable Output:** Reports can be saved as Markdown files or extended to support additional formats.
+* **Extensible & Modular:** Easily add new data sources, templates, or output options.
+
+---
+
+## Project Structure
+
+```
+.
+├── main.py                # Entry point: orchestrates fetching, parsing, reporting, and saving
+├── src/
+│   ├── read_emails.py     # Fetches and parses emails
+│   ├── prompt_LLM.py      # Generates reports using an LLM
+│   ├── database.py        # Initializes DB and saves interactions/reports
+│   └── utils.py           # Helper functions, e.g., saving reports
+├── reports/               # Folder for Markdown report files
+├── insights.db            # SQLite database (auto-created)
+└── requirements.txt       # Python dependencies
+```
+
+---
+
+## Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone <repo-url>
+   cd <repo-directory>
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Configure Gmail credentials (for `simplegmail`) and set up any API access for the LLM model (`ollama`).
+
+---
+
+## Usage
+
+1. **Initialize Database (first run only):**
+
+   ```python
+   from src.database import init_db
+   init_db()
+   ```
+
+2. **Run the Main Script:**
+
+   ```bash
+   python main.py
+   ```
+
+   Workflow:
+
+   * Fetches emails matching your filters.
+   * Parses questions, answers, timestamps, and match scores.
+   * Generates a structured daily report with LLM.
+   * Saves interactions and reports in SQLite.
+   * Exports the report to `reports/YYYY-MM-DD.md`.
+
+3. **Configuration Options:**
+
+   * Update `SUBJECT_PATTERN` and `SENDER_PATTERN` in `read_emails.py`.
+   * Change LLM model in `prompt_LLM.generate_daily_report`.
+   * Modify report folder in `utils.save_report`.
+
+---
+
+## Querying Database
+
+You can query interactions or reports with SQLite or tools like VSCode SQLite Viewer:
+
+Example: Fetch questions with match score < 20% for a specific date:
+
+```sql
+SELECT question, answer, match_score
+FROM interactions
+WHERE date = '2025-09-18' AND match_score < 20;
+```
+
+---
+
+## Potential Improvements
+
+* Cluster similar questions using embeddings for better topic grouping.
+* Add automated email sending of generated reports.
+* Enhance sentiment and language detection for richer analysis.
+
+---
+
+## Requirements
+
+* Python 3.9+
+* `simplegmail`
+* `bs4`
+* `ollama`
+* `sqlite3` (built-in)
+
+Install all dependencies via `requirements.txt`.
+
+---
