@@ -55,15 +55,16 @@ def main_monthly(date):
         return
 
     # Create monthly summary prompt
-    prompt = create_monthly_prompt([
-        {"date": report[1], "content": report[6]} for report in monthly_reports
-    ])
+    totals = calculate_totals(monthly_reports)
+    monthly_reports = [{"date": report[1], "content": report[6]} for report in monthly_reports]
+    prompt = create_monthly_prompt(monthly_reports, totals)
 
     # Generate monthly summary report
     monthly_report = generate_report(prompt, model="mistral")
 
-    # EXTRA Save monthly report
-    save_report(monthly_report, f"month_{date.month}_{date.year}", folder="reports")
+    # Save monthly report
+    save_report(monthly_report, f"month_{date.month}_{date.year}", folder="reports")  # EXTRA
+    update_db(totals, monthly_report, report_type="monthly_reports")
 
 
 
