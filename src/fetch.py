@@ -19,14 +19,16 @@ def sort_by_date(emails):
     return emails_per_date
 
 def fetch_emails():
+    """Fetch unread emails from Gmail matching specific patterns and group them by date."""
     gmail = Gmail()
-    # raw_emails = gmail.get_unread_inbox()  # Fetch unread inbox messages
-    raw_emails = gmail.get_messages()
+    raw_emails = gmail.get_unread_inbox()  # Fetch unread inbox messages
+    # raw_emails = gmail.get_messages()
     filtered_emails = [email for email in raw_emails if filter_emails(email)]
     sorted_emails = sort_by_date(filtered_emails)
     return sorted_emails
 
 def parse_email(date, email_list):
+    """Parse a list of emails for a specific date and extract Q&A logs and metrics."""
     complete_misses = 0
     accumulated_match = 0
     logs = []
