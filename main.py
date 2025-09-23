@@ -28,16 +28,16 @@ def main_daily():
 
 def main_weekly(date):
     # Fetch past week's reports
-    past_week_reports = fetch_past_week_reports(date)
+    past_week_daily_reports = fetch_past_week_reports(date)
     
-    if not past_week_reports:
+    if not past_week_daily_reports:
         print("No reports found for the past week.")
         return
 
     # Create weekly summary prompt
-    totals = calculate_totals(past_week_reports)
-    past_week_reports = [{"date": report[1], "content": report[6]} for report in past_week_reports]
-    prompt = create_weekly_prompt(past_week_reports, totals)
+    totals = calculate_totals(past_week_daily_reports)
+    past_week_daily_reports = [{"date": report[1], "content": report[6]} for report in past_week_daily_reports]
+    prompt = create_weekly_prompt(past_week_daily_reports, totals)
 
     # Generate weekly summary report
     weekly_report = generate_report(prompt, model="mistral")
@@ -48,16 +48,16 @@ def main_weekly(date):
 
 def main_monthly(date):
     # Fetch past month's reports
-    monthly_reports = fetch_past_month_reports(date)
+    past_month_weekly_reports = fetch_past_month_reports(date)
 
-    if not monthly_reports:
+    if not past_month_weekly_reports:
         print("No reports found for the past month.")
         return
 
     # Create monthly summary prompt
-    totals = calculate_totals(monthly_reports)
-    monthly_reports = [{"date": report[1], "content": report[6]} for report in monthly_reports]
-    prompt = create_monthly_prompt(monthly_reports, totals)
+    totals = calculate_totals(past_month_weekly_reports)
+    past_month_weekly_reports = [{"date": report[1], "content": report[6]} for report in past_month_weekly_reports]
+    prompt = create_monthly_prompt(past_month_weekly_reports, totals)
 
     # Generate monthly summary report
     monthly_report = generate_report(prompt, model="mistral")

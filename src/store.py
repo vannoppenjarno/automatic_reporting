@@ -117,7 +117,7 @@ def update_db(parsed_email, report_text, report_type="daily_reports", db_path: s
 
     conn.commit()
     conn.close()
-    print(f"✅ Saved report and {len(parsed_email['logs'])} interactions for {parsed_email['date']}")
+    print(f"✅ Saved report and {parsed_email['n_logs']} interactions for {parsed_email['date']}")
 
 def fetch_past_week_reports(today, db_path: str = DB_PATH):
     """Fetch daily reports from the last 7 days."""

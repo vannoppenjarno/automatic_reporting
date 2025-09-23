@@ -61,7 +61,7 @@ def generate_report(prompt, model="mistral"):
 
     return response["message"]["content"]
 
-def create_weekly_prompt(past_week_reports, totals):
+def create_weekly_prompt(past_week_daily_reports, totals):
     """
     Create a consistent prompt for generating a weekly summary report from daily reports.
     """
@@ -69,7 +69,7 @@ def create_weekly_prompt(past_week_reports, totals):
     # Prepare daily reports as plain text
     reports_text = "\n\n".join(
         f"### Report for {report['date']}\n{report['content']}"
-        for report in past_week_reports
+        for report in past_week_daily_reports
     )
 
     # Consistent prompt
@@ -110,7 +110,7 @@ def create_weekly_prompt(past_week_reports, totals):
     """
     return prompt
 
-def create_monthly_prompt(weekly_reports):
+def create_monthly_prompt(past_month_weekly_reports, totals):
     """
     Create a consistent prompt for generating a monthly summary report from weekly reports.
     """
@@ -119,7 +119,7 @@ def create_monthly_prompt(weekly_reports):
     # Prepare weekly reports as plain text
     reports_text = "\n\n".join(
         f"### Report for Week {report['week_number']} ({report['date_range']})\n{report['content']}"
-        for report in weekly_reports
+        for report in past_month_weekly_reports
     )
 
     # Consistent prompt
@@ -127,13 +127,13 @@ def create_monthly_prompt(weekly_reports):
     You are tasked with generating a **short and structured monthly summary report** from weekly interaction reports.
     The monthly report must always follow this exact format with the following sections:
 
-    # Monthly Summary Report
+    # Monthly Summary Report ({totals['date']})
 
     ## 1. Monthly Overview
-    - Total Interactions: Sum of total interactions from all weeks.
-    - Average Match Score: Average of weekly average match scores.
-    - Total Complete Misses: Sum of complete misses from all weeks.
-    - Overall Complete Misses Rate: Overall rate calculated from total interactions and total complete misses.
+    - Total Interactions: {totals['n_logs']}
+    - Average Match Score: {totals['average_match']}%
+    - Total Complete Misses: {totals['complete_misses']}
+    - Overall Complete Misses Rate: {totals['complete_misses_rate']}%
     - Language trends: Summarize which languages were most used throughout the month.
     - Visitor sentiment: Summarize overall sentiment trends (positive, neutral, negative).
     - Peak interaction times: Identify busiest times of the month (morning, afternoon, evening).

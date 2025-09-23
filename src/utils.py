@@ -1,5 +1,4 @@
 def calculate_totals(reports):
-    # TODO check calculations!!
     date = reports[0][1] if reports else ""
     total_interactions = sum(report[2] for report in reports)
     average_match = round(sum(report[3] for report in reports) / len(reports), 2) if reports else 0
