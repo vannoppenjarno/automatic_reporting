@@ -8,6 +8,7 @@ def create_daily_prompt(parsed_email):
     # Prepare logs as plain text
     logs_text = "\n".join(
         f"Question: {log['question']} | Match: {log['match_score']} | Time: {log['time']}\n"
+        f"Question: {log['question']} | Match: {log['match_score']} | Time: {log['time']}\n"
         for log in parsed_email["logs"]
     )
 
