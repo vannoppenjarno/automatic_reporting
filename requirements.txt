@@ -1,0 +1,7 @@
+calendar
+datetime
+simplegmail
+bs4
+collections
+ollama
+sqlite3
