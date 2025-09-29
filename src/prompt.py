@@ -7,7 +7,7 @@ def create_daily_prompt(parsed_email):
 
     # Prepare logs as plain text
     logs_text = "\n".join(
-        f"Q: {log['question']}\nA: {log['answer']}\nMatch: {log['match_score']} | Time: {log['time']}\n"
+        f"Question: {log['question']} | Match: {log['match_score']} | Time: {log['time']}\n"
         for log in parsed_email["logs"]
     )
 
@@ -29,7 +29,7 @@ def create_daily_prompt(parsed_email):
 
     ## 2. Most Asked Topics & Common Questions
     - Group similar questions into clear topics.
-    - Under each topic, show only **representative questions (Q)** and short summarized **answers (A)**.
+    - Under each topic, show at most two representative questions.
     - Do not repeat the same question multiple times.
     - Keep it short and concise.
 
