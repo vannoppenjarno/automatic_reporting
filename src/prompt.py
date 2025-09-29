@@ -29,7 +29,7 @@ def create_daily_prompt(parsed_email):
 
     ## 2. Most Asked Topics & Common Questions
     - Group similar questions into clear topics.
-    - Under each topic, show only **representative questions (Q)**.
+    - Under each topic, show at most two representative questions (Q).
     - Do not repeat the same question multiple times.
     - Keep it short and concise.
 
@@ -91,7 +91,7 @@ def create_weekly_prompt(past_week_daily_reports, totals):
     ## 2. Key Topics & Common Questions
     - Identify recurring topics across the week.
     - Highlight any new topics that emerged during the week.
-    - Under each topic, show only **representative questions (Q)**.
+    - Under each topic, show at most two representative questions (Q).
     - Do not repeat the same question multiple times.
     - Keep it short and concise.
 
@@ -141,7 +141,7 @@ def create_monthly_prompt(past_month_weekly_reports, totals):
     ## 2. Key Topics & Common Questions
     - Identify recurring topics across the month.
     - Highlight any new topics that emerged during the month.
-    - Under each topic, show only **representative questions (Q)**.
+    - Under each topic, show at most two representative questions (Q).
     - Do not repeat the same question multiple times.
     - Keep it short and concise.
 
