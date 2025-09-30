@@ -66,6 +66,7 @@ This project automates the collection, analysis, and reporting of visitor intera
 - Daily reports are based on **email receive date** (adjust to interaction date for future production version)
 - Use **local SQLite** to store all info in a queryable database (free and simple as it is local, no server)
 - Use **local LLM Ollama** to summarize and aggregate reports
+- JSON-enforced output for consistent LLM responses.
 - Only questions (and other relevant information) are in the report prompt, the answers are not included  
 - Generate weekly report every Sunday, based on daily reports of last week
 - Generate monthly report last day of each month, based on weekly reports in that month
