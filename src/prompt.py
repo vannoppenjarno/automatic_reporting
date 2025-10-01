@@ -46,12 +46,14 @@ def create_daily_prompt(parsed_email):
     - Always merge related sub-questions under one topic entry.
     - Provide only one representative_question per topic.
     - List topics from most frequent to least frequent.
+    - Keep it short and concise.
 
     Some additional instructions for the recommended actions:
     - Suggest recommendations taking into account the following context {context}.
     - Suggest knowledge base entries that need updating or expanding based on lowest scoring topics (knowledge gaps) and their frequency.
     - Suggest example questions based on FAQ questions and the highest scoring topics that are already well covered.
-    - Prioritize cheapest/easiest to implement and highest potential customer satisfaction.
+    - Prioritize them in order of cost efficiency: cheapest/easiest to implement and highest potential customer satisfaction.
+    - Keep it short and concise (at most 5 recommendations).
 
     Here are the interaction logs:
     {logs_text}
@@ -62,7 +64,7 @@ def create_daily_prompt(parsed_email):
 
 def add_calculations(json_report, data):
     json_report = json.loads(repair_json(json_report))  # Repair JSON if needed and convert str to dict
-    json_report["overview"]["total_interactions"] = len(data['logs'])
+    json_report["overview"]["total_interactions"] = data['n_logs']
     json_report["overview"]["average_match_score"] = data['average_match']
     json_report["overview"]["complete_misses"] = data['complete_misses']
     json_report["overview"]["complete_misses_rate"] = data['complete_misses_rate']
