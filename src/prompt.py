@@ -6,7 +6,7 @@ def get_report_structure(title):
     """
     Update the report structure template with new metadata values.
     """
-    with open('report_structure.json', 'r') as file:
+    with open('info/report_structure.json', 'r') as file:
         report_structure = json.load(file)
     report_structure["title"] = title
     return report_structure
@@ -15,7 +15,7 @@ def get_context():
     """
     Load context from a markdown file.
     """
-    with open('context.md', 'r') as file:
+    with open('info/context.md', 'r') as file:
         context = file.read()
     return context
 
