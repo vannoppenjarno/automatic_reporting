@@ -1,17 +1,14 @@
 import ollama
 import json
+from json_repair import repair_json  # ensures valid JSON from LLM
 
-def get_report_structure(title, parsed_email):
+def get_report_structure(title):
     """
     Update the report structure template with new metadata values.
     """
     with open('report_structure.json', 'r') as file:
         report_structure = json.load(file)
     report_structure["title"] = title
-    report_structure["overview"]["total_interactions"] = len(parsed_email['logs'])
-    report_structure["overview"]["average_match_score"] = round(parsed_email['average_match'])
-    report_structure["overview"]["complete_misses"] = parsed_email['complete_misses']
-    report_structure["overview"]["complete_misses_rate"] = round(parsed_email['complete_misses_rate'])
     return report_structure
 
 def get_context():
@@ -34,7 +31,7 @@ def create_daily_prompt(parsed_email):
     )
 
     title = f"Daily Interaction Report - {parsed_email['date']}"
-    report_structure = get_report_structure(title, parsed_email)
+    report_structure = get_report_structure(title)
     context = get_context()
 
     # Consistent prompt
@@ -63,7 +60,16 @@ def create_daily_prompt(parsed_email):
     """
     return prompt
 
-def generate_report(prompt, model="mistral"):
+def add_calculations(json_report, data):
+    json_report = json.loads(repair_json(json_report))  # Repair JSON if needed and convert str to dict
+    json_report["overview"]["total_interactions"] = len(data['logs'])
+    json_report["overview"]["average_match_score"] = data['average_match']
+    json_report["overview"]["complete_misses"] = data['complete_misses']
+    json_report["overview"]["complete_misses_rate"] = data['complete_misses_rate']
+    json_report = json.dumps(json_report, indent=2)  # Convert dict back to str
+    return json_report
+    
+def generate_report(prompt, data, model="mistral"):
     """
     Generate a report based on a custom prompt using a local Ollama model.
     """
@@ -73,8 +79,9 @@ def generate_report(prompt, model="mistral"):
         model=model,
         messages=[{"role": "user", "content": prompt}],
     )
-
-    return response["message"]["content"]
+    raw_output = response["message"]["content"]
+    output = add_calculations(raw_output, data)
+    return output
 
 def create_weekly_prompt(past_week_daily_reports, totals):
     """
@@ -88,7 +95,7 @@ def create_weekly_prompt(past_week_daily_reports, totals):
     )
 
     title = f"Weekly Interaction Report - Week of {totals['date']}"
-    report_structure = get_report_structure(title, totals)
+    report_structure = get_report_structure(title)
 
     # Consistent prompt
     prompt = f"""
@@ -114,7 +121,7 @@ def create_monthly_prompt(past_month_weekly_reports, totals):
     )
 
     title = f"Monthly Interaction Report - {totals['date']}"
-    report_structure = get_report_structure(title, totals)
+    report_structure = get_report_structure(title)
 
     # Consistent prompt
     prompt = f"""
