@@ -10,8 +10,8 @@ def save_report(report_text, date, folder=REPORTS_DIR):
     # Ensure reports folder exists
     os.makedirs(folder, exist_ok=True)
 
-    # Normalize date string (e.g., '2025-09-16' → '2025-09-16.md')
-    filename = f"{date}.md"
+    # Normalize date string (e.g., '2025-09-16' → '2025-09-16.json')
+    filename = f"{date}.json"
 
     # Full path
     filepath = os.path.join(folder, filename)
@@ -135,7 +135,7 @@ def fetch_past_week_reports(today, db_path: str = DB_PATH):
 
     reports = cur.fetchall()
     conn.close()
-    return reports  # return also the date and the week range...???
+    return reports  # TODO return also the date and the week range...???
 
 def fetch_past_month_reports(today, db_path: str = DB_PATH):
     """Fetch weekly reports from the last calendar month."""

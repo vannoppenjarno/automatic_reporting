@@ -1,6 +1,6 @@
-# Automatic Daily Reporting System
+# Automatic Daily, Weekly & Monthly Reporting System
 
-This project automates the collection, analysis, and reporting of visitor interaction data. It fetches emails, parses visitor questions and answers, generates structured daily reports using a local LLM, stores the data in a local database, and saves formatted reports to disk.
+This project automates the collection, analysis, and reporting of visitor interaction data. It fetches emails, parses visitor questions and answers, generates structured daily reports using a local LLM, stores the data in a local database, and saves formatted reports to disk. It also produces **weekly and monthly summaries** by aggregating daily and weekly reports.
 
 ---
 
@@ -8,9 +8,9 @@ This project automates the collection, analysis, and reporting of visitor intera
 
 * **Automated Data Collection:** Fetches emails from Gmail and filters relevant messages based on subject and sender patterns.
 * **Email Parsing:** Extracts questions, answers, timestamps, and match scores from HTML email content.
-* **LLM-Powered Reports:** Generates concise, structured daily reports with insights, trends, and topic analysis using a local Ollama model.
-* **Database Integration:** Stores parsed interactions and reports in SQLite for easy querying and historical tracking.
-* **Customizable Output:** Reports can be saved as Markdown files or extended to support additional formats.
+* **LLM-Powered Reports:** Generates concise, structured daily, weekly, and monthly reports with insights, trends, and topic analysis using a local Ollama model.
+* **Database Integration:** Stores all interactions and reports in SQLite (`daily_reports`, `weekly_reports`, `monthly_reports`) for easy querying and historical tracking.
+* **Customizable Output:** Reports are additionally saved as Markdown files in `reports/` for easy inspection.
 * **Extensible & Modular:** Easily add new data sources, templates, or output options.
 
 ---
@@ -21,12 +21,12 @@ This project automates the collection, analysis, and reporting of visitor intera
 .
 ├── main.py                # Entry point: orchestrates fetching, parsing, reporting, and saving
 ├── src/
-│   ├── read_emails.py     # Fetches and parses emails
-│   ├── prompt_LLM.py      # Generates reports using an LLM
-│   ├── database.py        # Initializes DB and saves interactions/reports
-│   └── utils.py           # Helper functions, e.g., saving reports
-├── reports/               # Folder for Markdown report files
-├── insights.db            # SQLite database (auto-created)
+│   ├── fetch.py           # Fetches and parses emails
+│   ├── prompt.py          # Builds prompts & generates reports with Ollama
+│   ├── store.py           # DB schema, saving, and report persistence
+│   └── utils.py           # Helper functions (e.g., totals calculation)
+├── reports/               # Folder where Markdown reports are saved
+├── insights.db            # SQLite database (auto-created on first run)
 └── requirements.txt       # Python dependencies
 ```
 
@@ -47,71 +47,47 @@ This project automates the collection, analysis, and reporting of visitor intera
    pip install -r requirements.txt
    ```
 
-3. Configure Gmail credentials (for `simplegmail`) and set up any API access for the LLM model (`ollama`).
+3. Configure Gmail credentials for `simplegmail` (see https://developers.google.com/workspace/gmail/api/quickstart/python).
+   
+4. Install and run Ollama for local LLM inference.
 
 ---
 
-## Usage
+## **Configuration Options:**
 
-1. **Initialize Database (first run only):**
-
-   ```python
-   from src.database import init_db
-   init_db()
-   ```
-
-2. **Run the Main Script:**
-
-   ```bash
-   python main.py
-   ```
-
-   Workflow:
-
-   * Fetches emails matching your filters.
-   * Parses questions, answers, timestamps, and match scores.
-   * Generates a structured daily report with LLM.
-   * Saves interactions and reports in SQLite.
-   * Exports the report to `reports/YYYY-MM-DD.md`.
-
-3. **Configuration Options:**
-
-   * Update `SUBJECT_PATTERN` and `SENDER_PATTERN` in `read_emails.py`.
-   * Change LLM model in `prompt_LLM.generate_daily_report`.
+   * Update `SUBJECT_PATTERN` and `SENDER_PATTERN` in `fetch.py`.
+   * Change LLM model in `prompt.generate_report`.
    * Modify report folder in `utils.save_report`.
 
 ---
 
-## Querying Database
+## Design Choices
 
-You can query interactions or reports with SQLite or tools like VSCode SQLite Viewer:
-
-Example: Fetch questions with match score < 20% for a specific date:
-
-```sql
-SELECT question, answer, match_score
-FROM interactions
-WHERE date = '2025-09-18' AND match_score < 20;
-```
+- Daily reports are based on **email receive date** (adjust to interaction date for future production version)
+- Use **local SQLite** to store all info in a queryable database (free and simple as it is local, no server)
+- Use **local LLM Ollama** to summarize and aggregate reports
+- JSON-enforced output for consistent LLM responses.
+- Only questions (and other relevant information) are in the report prompt, the answers are not included  
+- Generate weekly report every Sunday, based on daily reports of last week
+- Generate monthly report last day of each month, based on weekly reports in that month
 
 ---
 
 ## Potential Improvements
 
+* Use a more powerful LLM API
+* Use an online database integration such as Supabase
 * Cluster similar questions using embeddings for better topic grouping.
-* Add automated email sending of generated reports.
+* Add automated email sending of generated reports or expose them in a web dashboard.
 * Enhance sentiment and language detection for richer analysis.
 
 ---
 
-## Requirements
+## Scheduling
 
-* Python 3.9+
-* `simplegmail`
-* `bs4`
-* `ollama`
-* `sqlite3` (built-in)
+To run the pipeline automatically every day:
 
-Install all dependencies via `requirements.txt`.
-
----
+- Windows: Use Task Scheduler
+  - Trigger: Daily at 23:59:59
+  - Action: Run python main.py with “Start in” set to the project folder
+- Linux/macOS: Use cron
