@@ -3,10 +3,8 @@ from datetime import timedelta
 import sqlite3
 import os
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Access variables
 REPORTS_DIR = os.getenv("REPORTS_DIR")
 DB_PATH = os.getenv("DB_PATH")
 
