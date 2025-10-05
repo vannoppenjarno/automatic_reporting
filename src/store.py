@@ -35,6 +35,21 @@ def store_questions(parsed_email):
         )
     return
 
+def fetch_embeddings_by_date(date):
+    """Fetch all question embeddings and their time for a given date."""
+    # Chroma allows filtering by metadata
+    results = collection.query(
+        n_results=10000,  # adjust as needed TODO: put into .env
+        where={"date": date},
+        include=["documents", "metadatas", "embeddings"]
+    )
+    
+    questions = results['documents'][0] if results['documents'] else []
+    embeddings = results['embeddings'][0] if results['embeddings'] else []
+    time = results['metadatas'][0]["time"] if results['metadatas'] else []
+    
+    return questions, embeddings, time
+
 def save_report(report_text, date, folder=REPORTS_DIR):
     """Save the daily report as a markdown file in the reports folder."""
     # Ensure reports folder exists
