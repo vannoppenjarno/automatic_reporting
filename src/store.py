@@ -1,6 +1,5 @@
 import chromadb
-from chromadb.config import Settings
-from utils import embed_question
+from .utils import embed_question
 from dotenv import load_dotenv
 from datetime import timedelta
 import sqlite3
@@ -11,20 +10,26 @@ load_dotenv()
 REPORTS_DIR = os.getenv("REPORTS_DIR")
 DB_PATH = os.getenv("DB_PATH")
 
-client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory="vector_db"))
+client = chromadb.Client(
+    persist_directory="vector_db",   # where data will be stored
+    embedding_function=embed_question  
+)
 collection = client.get_or_create_collection(name="questions")
 
 def store_questions(parsed_email):
     """Store questions and their embeddings in the vector database."""
     for log in parsed_email["logs"]:
         question = log["question"]
-        vector = embed_question(question).tolist()
         collection.add(
             documents=[question],
-            metadatas={"answer": log["answer"], "match_score": float(log["match_score"].replace("%", "")), "date": parsed_email["date"], "time": log["time"]},
+            metadatas={
+                "answer": log["answer"], 
+                "match_score": float(log["match_score"].replace("%", "")), 
+                "date": parsed_email["date"], 
+                "time": log["time"]
+            },
             ids=[f"{parsed_email["date"]}_{hash(question)}"],
-            embeddings=[vector]
-            )
+        )
 
 def save_report(report_text, date, folder=REPORTS_DIR):
     """Save the daily report as a markdown file in the reports folder."""
