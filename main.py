@@ -3,7 +3,7 @@ import calendar
 from datetime import datetime
 from src.fetch import fetch_emails, parse_email
 from src.prompt import create_daily_prompt, generate_report, create_weekly_prompt, create_monthly_prompt
-from src.store import save_report, init_db, update_db, fetch_past_week_reports, fetch_past_month_reports
+from src.store import store_questions, save_report, init_db, update_db, fetch_past_week_reports, fetch_past_month_reports
 from src.utils import calculate_totals
 from dotenv import load_dotenv
 
@@ -25,6 +25,9 @@ def main_daily():
 
     for date, email_list in emails.items():
         parsed = parse_email(date, email_list)
+
+        # Store questions in the vector database
+        store_questions(parsed)
 
         # Generate structured daily report with LLM
         prompt = create_daily_prompt(parsed)
