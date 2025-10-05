@@ -1,3 +1,11 @@
+from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+SENTENCE_EMBEDDING_MODEL = os.getenv("SENTENCE_EMBEDDING_MODEL")
+
 def calculate_totals(reports):
     date = reports[0][1] if reports else ""
     total_interactions = sum(report[2] for report in reports)
@@ -13,3 +21,34 @@ def calculate_totals(reports):
         "complete_misses_rate": overall_complete_misses_rate,
     }
     return totals
+
+embedder = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)
+def embed_question(question):
+    return embedder.encode(question, normalize_embeddings=True)
+
+# Potential Improvement: Use this clustering (to cluster similar questions) before prompting the LLM 
+# from sklearn.cluster import KMeans
+# def cluster_questions(logs, num_clusters=None):
+#     """
+#     Group similar questions using sentence embeddings + KMeans.
+#     """
+#     questions = [log["question"] for log in logs]
+
+#     if len(questions) < 2:  # not enough to cluster
+#         return {0: logs}
+
+#     # Create embeddings
+#     embeddings = embedder.encode(questions)
+
+#     # Choose number of clusters (sqrt heuristic)
+#     if num_clusters is None:
+#         num_clusters = int(np.ceil(np.sqrt(len(questions))))
+
+#     kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init="auto")
+#     labels = kmeans.fit_predict(embeddings)
+
+#     clustered = {}
+#     for label, log in zip(labels, logs):
+#         clustered.setdefault(label, []).append(log)
+
+#     return clustered
