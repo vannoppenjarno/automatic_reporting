@@ -10,16 +10,14 @@ load_dotenv()
 REPORTS_DIR = os.getenv("REPORTS_DIR")
 DB_PATH = os.getenv("DB_PATH")
 
-client = chromadb.Client(
-    persist_directory="vector_db",   # where data will be stored
-    embedding_function=embed_question  
-)
+client = chromadb.PersistentClient(path=r"C:\Users\jarno\Desktop\Digiole\code\automatic_reporting")
 collection = client.get_or_create_collection(name="questions")
 
 def store_questions(parsed_email):
     """Store questions and their embeddings in the vector database."""
     for log in parsed_email["logs"]:
         question = log["question"]
+        vector = embed_question(question)
         collection.add(
             documents=[question],
             metadatas={
@@ -29,6 +27,7 @@ def store_questions(parsed_email):
                 "time": log["time"]
             },
             ids=[f"{parsed_email["date"]}_{hash(question)}"],
+            embeddings=[vector]
         )
 
 def save_report(report_text, date, folder=REPORTS_DIR):

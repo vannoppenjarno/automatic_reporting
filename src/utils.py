@@ -24,7 +24,12 @@ def calculate_totals(reports):
 
 embedder = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)
 def embed_question(question):
-    return embedder.encode(question, normalize_embeddings=True)
+    return embedder.encode(question, normalize_embeddings=True).tolist()  # returns list of vectors
+
+# def find_similar_questions(question, top_k=5):
+#     vector = embed_question(question).tolist()
+#     results = collection.query(query_embeddings=[vector], n_results=top_k)
+#     return results['documents'], results['metadatas']
 
 # Potential Improvement: Use this clustering (to cluster similar questions) before prompting the LLM 
 # from sklearn.cluster import KMeans
