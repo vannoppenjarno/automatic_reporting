@@ -1,3 +1,6 @@
+from sklearn.cluster import KMeans
+import numpy as np
+
 def calculate_totals(reports):
     date = reports[0][1] if reports else ""
     total_interactions = sum(report[2] for report in reports)
@@ -14,34 +17,23 @@ def calculate_totals(reports):
     }
     return totals
 
-# def find_similar_questions(question, top_k=5):
-#     vector = embed_question(question).tolist()
-#     results = collection.query(query_embeddings=[vector], n_results=top_k)
-#     return results['documents'], results['metadatas']
+def cluster_questions(questions, embeddings, num_clusters=None):
+    """
+    Cluster similar questions using embeddings.
+    - num_clusters: optional, if None use sqrt heuristic
+    """
+    if len(questions) < 2:  # not enough to cluster
+        return {0: list(range(len(questions)))}
 
-# Potential Improvement: Use this clustering (to cluster similar questions) before prompting the LLM 
-# from sklearn.cluster import KMeans
-# def cluster_questions(logs, num_clusters=None):
-#     """
-#     Group similar questions using sentence embeddings + KMeans.
-#     """
-#     questions = [log["question"] for log in logs]
+    # Choose number of clusters (sqrt heuristic)
+    if num_clusters is None:
+        num_clusters = int(np.ceil(np.sqrt(len(questions))))
 
-#     if len(questions) < 2:  # not enough to cluster
-#         return {0: logs}
+    kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init="auto")
+    labels = kmeans.fit_predict(np.array(embeddings))
 
-#     # Create embeddings
-#     embeddings = embedder.encode(questions)
+    clusters = {}
+    for idx, label in enumerate(labels):
+        clusters.setdefault(label, []).append(idx)
 
-#     # Choose number of clusters (sqrt heuristic)
-#     if num_clusters is None:
-#         num_clusters = int(np.ceil(np.sqrt(len(questions))))
-
-#     kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init="auto")
-#     labels = kmeans.fit_predict(embeddings)
-
-#     clustered = {}
-#     for label, log in zip(labels, logs):
-#         clustered.setdefault(label, []).append(log)
-
-#     return clustered
+    return clusters
