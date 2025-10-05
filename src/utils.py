@@ -1,5 +1,7 @@
-from sklearn.cluster import KMeans
+from sklearn.metrics.pairwise import euclidean_distances
+from collections import Counter
 import numpy as np
+import hdbscan
 
 def calculate_totals(reports):
     date = reports[0][1] if reports else ""
@@ -17,23 +19,33 @@ def calculate_totals(reports):
     }
     return totals
 
-def cluster_questions(questions, embeddings, num_clusters=None):
+def cluster_questions_hdbscan(questions, embeddings, min_cluster_size=2):
     """
-    Cluster similar questions using embeddings.
-    - num_clusters: optional, if None use sqrt heuristic
+    Cluster embeddings with HDBSCAN and return cluster assignments.
+    Returns:
+      - clusters: dict {cluster_label: list of questions}
+      - noise: list of indices labeled as noise (-1)
     """
-    if len(questions) < 2:  # not enough to cluster
-        return {0: list(range(len(questions)))}
+    if len(questions) < 2:
+        return {0: list(range(len(questions)))}, []
 
-    # Choose number of clusters (sqrt heuristic)
-    if num_clusters is None:
-        num_clusters = int(np.ceil(np.sqrt(len(questions))))
-
-    kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init="auto")
-    labels = kmeans.fit_predict(np.array(embeddings))
+    X = np.array(embeddings)
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size)
+    labels = clusterer.fit_predict(X)
 
     clusters = {}
+    noise = []
     for idx, label in enumerate(labels):
-        clusters.setdefault(label, []).append(idx)
+        if label == -1:
+            noise.append(idx)
+        else:
+            clusters.setdefault(label, []).append(idx)
 
-    return clusters
+    # Map indices to actual question texts
+    clusters = {
+        cluster_id: [questions[i] for i in indices]
+        for cluster_id, indices in clusters.items()
+    }
+    noise = [questions[i] for i in noise]
+
+    return clusters, noise
