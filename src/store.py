@@ -1,9 +1,14 @@
+from dotenv import load_dotenv
 from datetime import timedelta
 import sqlite3
 import os
 
-REPORTS_DIR = "reports"
-DB_PATH = "insights.db"
+# Load environment variables from .env file
+load_dotenv()
+
+# Access variables
+REPORTS_DIR = os.getenv("REPORTS_DIR")
+DB_PATH = os.getenv("DB_PATH")
 
 def save_report(report_text, date, folder=REPORTS_DIR):
     """Save the daily report as a markdown file in the reports folder."""

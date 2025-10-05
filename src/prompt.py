@@ -1,12 +1,20 @@
 import ollama
 import json
 from json_repair import repair_json  # ensures valid JSON from LLM
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+REPORT_STRUCTURE_PATH = os.getenv("REPORT_STRUCTURE_PATH")
+CONTEXT_PATH = os.getenv("CONTEXT_PATH")
+MODEL = os.getenv("MODEL")
 
 def get_report_structure(title):
     """
     Update the report structure template with new metadata values.
     """
-    with open('info/report_structure.json', 'r') as file:
+    with open(REPORT_STRUCTURE_PATH, 'r') as file:
         report_structure = json.load(file)
     report_structure["title"] = title
     return report_structure
@@ -15,7 +23,7 @@ def get_context():
     """
     Load context from a markdown file.
     """
-    with open('info/context.md', 'r') as file:
+    with open(CONTEXT_PATH, 'r') as file:
         context = file.read()
     return context
 
@@ -71,7 +79,7 @@ def add_calculations(json_report, data):
     json_report = json.dumps(json_report, indent=2)  # Convert dict back to str
     return json_report
     
-def generate_report(prompt, data, model="mistral"):
+def generate_report(prompt, data, model=MODEL):
     """
     Generate a report based on a custom prompt using a local Ollama model.
     """

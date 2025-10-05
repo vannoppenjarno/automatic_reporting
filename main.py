@@ -5,10 +5,17 @@ from src.fetch import fetch_emails, parse_email
 from src.prompt import create_daily_prompt, generate_report, create_weekly_prompt, create_monthly_prompt
 from src.store import save_report, init_db, update_db, fetch_past_week_reports, fetch_past_month_reports
 from src.utils import calculate_totals
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Access necessary environment variables
+DB_PATH = os.getenv("DB_PATH")
 
 def main_daily():
     # Initialize DB (only first run)
-    if not os.path.exists("insights.db"):
+    if not os.path.exists(DB_PATH):
         init_db()
 
     emails = fetch_emails()
@@ -21,9 +28,9 @@ def main_daily():
 
         # Generate structured daily report with LLM
         prompt = create_daily_prompt(parsed)
-        report = generate_report(prompt, parsed, model="mistral")
- 
-        save_report(report, parsed["date"], folder="reports")  # EXTRA Save markdown file for quick easy access
+        report = generate_report(prompt, parsed)
+
+        save_report(report, parsed["date"])  # EXTRA Save markdown file for quick easy access
         update_db(parsed, report)  # Save interactions + report in the SQLite database
 
 def main_weekly(date):
@@ -40,10 +47,10 @@ def main_weekly(date):
     prompt = create_weekly_prompt(past_week_daily_reports, totals)
 
     # Generate weekly summary report
-    weekly_report = generate_report(prompt, totals, model="mistral")
+    weekly_report = generate_report(prompt, totals)
 
     # Save weekly report
-    save_report(weekly_report, f"week_{date.isocalendar()[1]}", folder="reports")  # EXTRA
+    save_report(weekly_report, f"week_{date.isocalendar()[1]}")  # EXTRA
     update_db(totals, weekly_report, report_type="weekly_reports")
 
 def main_monthly(date):
@@ -60,10 +67,10 @@ def main_monthly(date):
     prompt = create_monthly_prompt(past_month_weekly_reports, totals)
 
     # Generate monthly summary report
-    monthly_report = generate_report(prompt, totals, model="mistral")
+    monthly_report = generate_report(prompt, totals)
 
     # Save monthly report
-    save_report(monthly_report, f"month_{date.month}_{date.year}", folder="reports")  # EXTRA
+    save_report(monthly_report, f"month_{date.month}_{date.year}")  # EXTRA
     update_db(totals, monthly_report, report_type="monthly_reports")
 
 
