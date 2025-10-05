@@ -1,18 +1,22 @@
-import chromadb
-from .utils import embed_question
+from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 from datetime import timedelta
+import chromadb
 import sqlite3
 import os
 
 load_dotenv()
 
+SENTENCE_EMBEDDING_MODEL = os.getenv("SENTENCE_EMBEDDING_MODEL")
 REPORTS_DIR = os.getenv("REPORTS_DIR")
 DB_PATH = os.getenv("DB_PATH")
 
+embedder = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)
+def embed_question(question):
+    return embedder.encode(question, normalize_embeddings=True).tolist()  # returns list of vectors
+
 client = chromadb.PersistentClient(path=r"C:\Users\jarno\Desktop\Digiole\code\automatic_reporting")
 collection = client.get_or_create_collection(name="questions")
-
 def store_questions(parsed_email):
     """Store questions and their embeddings in the vector database."""
     for log in parsed_email["logs"]:
@@ -29,6 +33,7 @@ def store_questions(parsed_email):
             ids=[f"{parsed_email["date"]}_{hash(question)}"],
             embeddings=[vector]
         )
+    return
 
 def save_report(report_text, date, folder=REPORTS_DIR):
     """Save the daily report as a markdown file in the reports folder."""

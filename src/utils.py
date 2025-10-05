@@ -1,11 +1,3 @@
-from sentence_transformers import SentenceTransformer
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-SENTENCE_EMBEDDING_MODEL = os.getenv("SENTENCE_EMBEDDING_MODEL")
-
 def calculate_totals(reports):
     date = reports[0][1] if reports else ""
     total_interactions = sum(report[2] for report in reports)
@@ -21,10 +13,6 @@ def calculate_totals(reports):
         "complete_misses_rate": overall_complete_misses_rate,
     }
     return totals
-
-embedder = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)
-def embed_question(question):
-    return embedder.encode(question, normalize_embeddings=True).tolist()  # returns list of vectors
 
 # def find_similar_questions(question, top_k=5):
 #     vector = embed_question(question).tolist()
