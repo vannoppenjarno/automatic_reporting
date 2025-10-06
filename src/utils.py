@@ -95,8 +95,9 @@ def format_clusters_for_llm(clusters, noise, questions, embeddings, metadatas):
         representative_questions = get_representative_questions(indices, questions, embeddings)
 
         output_lines.append(f"=== Cluster {cluster_id} ===")
-        output_lines.append(f"Representative Questions: Highest frequency: {representative_questions[0]}, Closest to centroid: {representative_questions[1]}")
+        output_lines.append(f"Question count: {len(cluster_questions)}")
         output_lines.append(f"Average Match Score: {avg_score:.2f}%")
+        output_lines.append(f"Representative Questions: Highest frequency: {representative_questions[0]}, Closest to centroid: {representative_questions[1]}")
         output_lines.append("Questions:")
         for idx, q in enumerate(cluster_questions, 1):
             output_lines.append(f"{idx}. {q}")
