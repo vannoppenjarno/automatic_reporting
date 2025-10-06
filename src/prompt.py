@@ -64,7 +64,7 @@ def create_daily_prompt(logs_text, data):
 
 def add_calculations(json_report, data):
     json_report = json.loads(repair_json(json_report))  # Repair JSON if needed and convert str to dict
-    json_report["overview"]["total_interactions"] = data['n_logs']
+    json_report["overview"]["total_question_count"] = data['n_logs']
     json_report["overview"]["average_match_score"] = data['average_match']
     json_report["overview"]["complete_misses"] = data['complete_misses']
     json_report["overview"]["complete_misses_rate"] = data['complete_misses_rate']
