@@ -55,7 +55,7 @@ def create_daily_prompt(logs_text, data):
     - Prioritize them in order of cost efficiency: cheapest/easiest to implement and highest potential customer satisfaction.
     - Keep it short and concise (at most 5 recommendations).
 
-    Here are the interaction logs:
+    Here are the pre-clustered interaction logs. Be sure to take into account the pre-clustering, the pre-calculated match scores per cluster, the frequency of questions per cluster, and the given representative questions!:
     {logs_text}
 
     Now generate the JSON output exactly as specified. Do not add extra text outside JSON, keep it concise, avoid redundancy, and do not invent categories.
