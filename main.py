@@ -12,10 +12,11 @@ load_dotenv()
 
 # Access necessary environment variables
 DB_PATH = os.getenv("DB_PATH")
+DB_NAME = os.getenv("DB_NAME")
 
 def main_daily():
     # Initialize DB (only first run)
-    if not os.path.exists(DB_PATH):
+    if not os.path.exists(DB_PATH + DB_NAME):
         init_db()
 
     emails = fetch_emails()
