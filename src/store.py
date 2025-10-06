@@ -21,7 +21,7 @@ def store_questions(data):
     """Store questions and their embeddings in the vector database."""
     for log in data["logs"]:
         question = log["question"]
-        vector = embed_question(question)
+        embedded_question = embed_question(question)
         collection.add(
             documents=[question],
             metadatas={
@@ -31,7 +31,7 @@ def store_questions(data):
                 "time": log["time"]
             },
             ids=[f"{data["date"]}_{hash(question)}"],
-            embeddings=[vector]
+            embeddings=[embedded_question]
         )
     return
 
