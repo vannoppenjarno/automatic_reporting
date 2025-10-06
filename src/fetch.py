@@ -34,7 +34,7 @@ def fetch_emails():
     return sorted_emails
 
 def parse_email(date, email_list):
-    """Parse a list of emails for a specific date and extract Q&A logs and metrics."""
+    """Parse a list of emails for a specific date, extract Q&A logs and metrics, and store it in a data dictionary."""
     complete_misses = 0
     accumulated_match = 0
     logs = []

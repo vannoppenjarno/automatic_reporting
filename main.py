@@ -3,8 +3,8 @@ import calendar
 from datetime import datetime
 from src.fetch import fetch_emails, parse_email
 from src.prompt import create_daily_prompt, generate_report, create_weekly_prompt, create_monthly_prompt
-from src.store import store_questions, save_report, init_db, update_db, fetch_past_week_reports, fetch_past_month_reports
-from src.utils import calculate_totals
+from src.store import store_questions, fetch_embeddings_by_date, save_report, init_db, update_db, fetch_past_week_reports, fetch_past_month_reports
+from src.utils import calculate_totals, cluster_questions
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -24,17 +24,14 @@ def main_daily():
         return
 
     for date, email_list in emails.items():
-        parsed = parse_email(date, email_list)
-
-        # Store questions in the vector database
-        store_questions(parsed)
+        data = parse_email(date, email_list)
 
         # Generate structured daily report with LLM
-        prompt = create_daily_prompt(parsed)
-        report = generate_report(prompt, parsed)
+        prompt = create_daily_prompt(data)
+        report = generate_report(prompt, data)
 
-        save_report(report, parsed["date"])  # EXTRA Save markdown file for quick easy access
-        update_db(parsed, report)  # Save interactions + report in the SQLite database
+        save_report(report, data["date"])  # EXTRA Save markdown file for quick easy access
+        update_db(data, report)  # Save interactions + report in the SQLite database
 
 def main_weekly(date):
     # Fetch past week's reports

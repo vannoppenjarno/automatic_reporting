@@ -27,7 +27,7 @@ def get_context():
         context = file.read()
     return context
 
-def create_daily_prompt(parsed_email):
+def create_daily_prompt(data):
     """
     Create a consistent prompt for generating a daily report from parsed email data.
     """
@@ -35,10 +35,10 @@ def create_daily_prompt(parsed_email):
     # Prepare logs as plain text
     logs_text = "\n".join(
         f"Question: {log['question']} | Match: {log['match_score']} | Time: {log['time']}\n"
-        for log in parsed_email["logs"]
+        for log in data["logs"]
     )
 
-    title = f"Daily Interaction Report - {parsed_email['date']}"
+    title = f"Daily Interaction Report - {data['date']}"
     report_structure = get_report_structure(title)
     context = get_context()
 

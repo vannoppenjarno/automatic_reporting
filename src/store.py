@@ -17,9 +17,9 @@ def embed_question(question):
 
 client = chromadb.PersistentClient(path=r"C:\Users\jarno\Desktop\Digiole\code\automatic_reporting")
 collection = client.get_or_create_collection(name="questions")
-def store_questions(parsed_email):
+def store_questions(data):
     """Store questions and their embeddings in the vector database."""
-    for log in parsed_email["logs"]:
+    for log in data["logs"]:
         question = log["question"]
         vector = embed_question(question)
         collection.add(
@@ -27,10 +27,10 @@ def store_questions(parsed_email):
             metadatas={
                 "answer": log["answer"], 
                 "match_score": float(log["match_score"].replace("%", "")), 
-                "date": parsed_email["date"], 
+                "date": data["date"], 
                 "time": log["time"]
             },
-            ids=[f"{parsed_email["date"]}_{hash(question)}"],
+            ids=[f"{data["date"]}_{hash(question)}"],
             embeddings=[vector]
         )
     return

@@ -19,7 +19,7 @@ def calculate_totals(reports):
     }
     return totals
 
-def cluster_questions_hdbscan(questions, embeddings, min_cluster_size=2):
+def cluster_questions(questions, embeddings, min_cluster_size=2):
     """
     Cluster embeddings with HDBSCAN and return cluster assignments.
     Returns:
