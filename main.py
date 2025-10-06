@@ -4,7 +4,7 @@ from datetime import datetime
 from src.fetch import fetch_emails, parse_email
 from src.prompt import create_daily_prompt, generate_report, create_weekly_prompt, create_monthly_prompt
 from src.store import store_questions, fetch_embeddings_by_date, save_report, init_db, update_db, fetch_past_week_reports, fetch_past_month_reports
-from src.utils import calculate_totals, cluster_questions
+from src.utils import calculate_totals, cluster_questions, format_clusters_for_llm
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -26,8 +26,14 @@ def main_daily():
     for date, email_list in emails.items():
         data = parse_email(date, email_list)
 
+        store_questions(data)  # Store questions in the vector database
+        questions, embeddings, metadatas = fetch_embeddings_by_date(date)  # Fetch embeddings for clustering
+        clusters, noise = cluster_questions(questions, embeddings)  # Cluster questions based on embeddings
+        logs_text = format_clusters_for_llm(clusters, noise, questions, embeddings, metadatas)
+        print(logs_text)  # For debugging
+
         # Generate structured daily report with LLM
-        prompt = create_daily_prompt(data)
+        prompt = create_daily_prompt(logs_text, data)
         report = generate_report(prompt, data)
 
         save_report(report, data["date"])  # EXTRA Save markdown file for quick easy access
