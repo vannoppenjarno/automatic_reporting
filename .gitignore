@@ -16,3 +16,6 @@ __pycache__/
 # ignore log files
 *.log
 *.bin
+
+# ignore sqlite3 database files
+*.sqlite3
