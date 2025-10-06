@@ -27,34 +27,67 @@ def get_context():
         context = file.read()
     return context
 
-def create_daily_prompt(data):
+def format_clusters_for_llm(clusters, noise, questions, metadatas):
+    """
+    Format clusters for LLM using questions and metadata.
+    
+    Args:
+      clusters: dict {cluster_id: list of question indices}
+      noise: list of question indices
+      questions: list of question texts
+      metadatas: list of dicts containing metadata (match_score, date, time, etc.)
+    
+    Returns:
+      str: nicely formatted plain text
+    """
+    output_lines = []
+
+    for cluster_id, indices in clusters.items():
+        cluster_questions = [questions[i] for i in indices]
+        cluster_scores = [metadatas[i].get("match_score", 0) for i in indices]
+        avg_score = sum(cluster_scores) / len(cluster_scores) if cluster_scores else 0
+
+        # Simple representative question: first question (can improve later)
+        representative_question = cluster_questions[0] if cluster_questions else ""
+
+        output_lines.append(f"=== Cluster {cluster_id} ===")
+        output_lines.append(f"Representative Question: {representative_question}")
+        output_lines.append(f"Average Match Score: {avg_score:.2f}%")
+        output_lines.append("Questions:")
+        for idx, q in enumerate(cluster_questions, 1):
+            output_lines.append(f"{idx}. {q}")
+        output_lines.append("")
+
+    if noise:
+        output_lines.append("=== Noise / Unclustered Questions ===")
+        for i in noise:
+            question = questions[i]
+            score = metadatas[i].get("match_score", 0)
+            output_lines.append(f"- {question} | Match Score: {score:.2f}%")
+        output_lines.append("")
+
+    return "\n".join(output_lines)
+
+def create_daily_prompt(logs_text, data):
     """
     Create a consistent prompt for generating a daily report from parsed email data.
     """
-
-    # Prepare logs as plain text
-    logs_text = "\n".join(
-        f"Question: {log['question']} | Match: {log['match_score']} | Time: {log['time']}\n"
-        for log in data["logs"]
-    )
-
     title = f"Daily Interaction Report - {data['date']}"
     report_structure = get_report_structure(title)
     context = get_context()
 
     # Consistent prompt
     prompt = f"""
-    Generate a daily report based on a structured JSON file and interaction logs.
+    Generate a daily report based on a structured JSON file and pre-clustered interaction logs.
     Important: Respond in valid JSON only (no extra text) and follow the exact JSON format provided (don't invent sections). Here is the JSON template for the report structure: {json.dumps(report_structure, indent=2)}
 
     Some additional instructions for the topics:
-    - Group semantically similar questions under ONE topic.
-    - Do not split by minor wording differences.
+    - Semantically similar questions are pre-clustered.
+    - Give each cluster a topic based on all questions in that cluster.
     - Use a broad, descriptive label for topics.
-    - Always merge related sub-questions under one topic entry.
-    - Provide only one representative_question per topic.
+    - Provide only one representative_question per topic from its corresponding cluster.
+    - Use the number of questions in each cluster to determine topic frequency.
     - List topics from most frequent to least frequent.
-    - Keep it short and concise.
 
     Some additional instructions for the recommended actions:
     - Suggest recommendations taking into account the following context {context}.
