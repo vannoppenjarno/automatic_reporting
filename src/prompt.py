@@ -27,47 +27,6 @@ def get_context():
         context = file.read()
     return context
 
-def format_clusters_for_llm(clusters, noise, questions, metadatas):
-    """
-    Format clusters for LLM using questions and metadata.
-    
-    Args:
-      clusters: dict {cluster_id: list of question indices}
-      noise: list of question indices
-      questions: list of question texts
-      metadatas: list of dicts containing metadata (match_score, date, time, etc.)
-    
-    Returns:
-      str: nicely formatted plain text
-    """
-    output_lines = []
-
-    for cluster_id, indices in clusters.items():
-        cluster_questions = [questions[i] for i in indices]
-        cluster_scores = [metadatas[i].get("match_score", 0) for i in indices]
-        avg_score = sum(cluster_scores) / len(cluster_scores) if cluster_scores else 0
-
-        # Simple representative question: first question (can improve later)
-        representative_question = cluster_questions[0] if cluster_questions else ""
-
-        output_lines.append(f"=== Cluster {cluster_id} ===")
-        output_lines.append(f"Representative Question: {representative_question}")
-        output_lines.append(f"Average Match Score: {avg_score:.2f}%")
-        output_lines.append("Questions:")
-        for idx, q in enumerate(cluster_questions, 1):
-            output_lines.append(f"{idx}. {q}")
-        output_lines.append("")
-
-    if noise:
-        output_lines.append("=== Noise / Unclustered Questions ===")
-        for i in noise:
-            question = questions[i]
-            score = metadatas[i].get("match_score", 0)
-            output_lines.append(f"- {question} | Match Score: {score:.2f}%")
-        output_lines.append("")
-
-    return "\n".join(output_lines)
-
 def create_daily_prompt(logs_text, data):
     """
     Create a consistent prompt for generating a daily report from parsed email data.
