@@ -43,9 +43,9 @@ def fetch_embeddings_by_date(date):
         include=["documents", "metadatas", "embeddings"]
     )
     
-    questions = results['documents'][0] if results['documents'] else []
-    embeddings = results['embeddings'][0] if results['embeddings'] else []
-    metadatas = results['metadatas'][0] if results['metadatas'] else []
+    questions = results['documents'] if results['documents'] else []
+    embeddings = results['embeddings'] if len(results['embeddings']) > 0 else []
+    metadatas = results['metadatas'] if results['metadatas'] else []
 
     return questions, embeddings, metadatas
 
