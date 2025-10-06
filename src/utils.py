@@ -23,7 +23,7 @@ def cluster_questions(questions, embeddings, min_cluster_size=2):
     """
     Cluster embeddings with HDBSCAN and return cluster assignments.
     Returns:
-      - clusters: dict {cluster_label: list of questions}
+      - clusters: dict {cluster_label: list of question indices}
       - noise: list of indices labeled as noise (-1)
     """
     if len(questions) < 2:
@@ -40,12 +40,5 @@ def cluster_questions(questions, embeddings, min_cluster_size=2):
             noise.append(idx)
         else:
             clusters.setdefault(label, []).append(idx)
-
-    # Map indices to actual question texts
-    clusters = {
-        cluster_id: [questions[i] for i in indices]
-        for cluster_id, indices in clusters.items()
-    }
-    noise = [questions[i] for i in noise]
 
     return clusters, noise
