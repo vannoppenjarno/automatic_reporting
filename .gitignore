@@ -12,3 +12,7 @@ __pycache__/
 
 # ignore environment files
 .env
+
+# ignore log files
+*.log
+*.bin
