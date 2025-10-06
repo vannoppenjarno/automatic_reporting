@@ -37,9 +37,8 @@ def store_questions(data):
 
 def fetch_embeddings_by_date(date):
     """Fetch all question embeddings and their metadata for a given date."""
-    # Chroma allows filtering by metadata
-    results = collection.query(
-        n_results=10000,  # adjust as needed TODO: put into .env
+    # Chroma allows filtering by metadata (date in this case)
+    results = collection.get(
         where={"date": date},
         include=["documents", "metadatas", "embeddings"]
     )
