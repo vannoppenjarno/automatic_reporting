@@ -43,7 +43,35 @@ def cluster_questions(questions, embeddings, min_cluster_size=2):
 
     return clusters, noise
 
-def format_clusters_for_llm(clusters, noise, questions, metadatas):
+def get_representative_questions(indices, questions, embeddings):
+    """
+    Return 1-2 representative questions for a single cluster:
+      1️⃣ Highest frequency question
+      2️⃣ Closest to centroid (if different)
+    
+    Args:
+      indices: list of question indices in this cluster
+      questions: list of all question texts
+      embeddings: list of all embeddings
+    
+    Returns:
+      list of representative questions (1 or 2 strings)
+    """
+    cluster_questions = [questions[i] for i in indices]
+    cluster_embeddings = np.array([embeddings[i] for i in indices])
+
+    # 1️⃣ Highest frequency question
+    freq_question = Counter(cluster_questions).most_common(1)[0][0]
+
+    # 2️⃣ Closest to centroid
+    centroid = cluster_embeddings.mean(axis=0, keepdims=True)
+    distances = euclidean_distances(cluster_embeddings, centroid)
+    closest_idx = indices[np.argmin(distances)]
+    centroid_question = questions[closest_idx]
+
+    return [freq_question, centroid_question]
+
+def format_clusters_for_llm(clusters, noise, questions, embeddings, metadatas):
     """
     Format clusters for LLM using questions and metadata.
     
@@ -64,10 +92,10 @@ def format_clusters_for_llm(clusters, noise, questions, metadatas):
         avg_score = sum(cluster_scores) / len(cluster_scores) if cluster_scores else 0
 
         # Simple representative question: first question (can improve later)
-        representative_question = cluster_questions[0] if cluster_questions else ""
+        representative_questions = get_representative_questions(indices, questions, embeddings)
 
         output_lines.append(f"=== Cluster {cluster_id} ===")
-        output_lines.append(f"Representative Question: {representative_question}")
+        output_lines.append(f"Representative Questions: Highest frequency: {representative_questions[0]}, Closest to centroid: {representative_questions[1]}")
         output_lines.append(f"Average Match Score: {avg_score:.2f}%")
         output_lines.append("Questions:")
         for idx, q in enumerate(cluster_questions, 1):
