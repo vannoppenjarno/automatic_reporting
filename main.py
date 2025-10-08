@@ -34,7 +34,7 @@ def main_daily():
         print(logs_text)  # For debugging
 
         # Generate structured daily report with LLM
-        prompt = create_daily_prompt(logs_text, data)
+        prompt = create_daily_prompt(logs_text, data['date'])
         report = generate_report(prompt, data)
 
         save_report(report, data["date"])  # EXTRA Save markdown file for quick easy access
