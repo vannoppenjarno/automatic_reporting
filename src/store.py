@@ -95,6 +95,10 @@ def init_db(db_path: str = DB_PATH + DB_NAME):
     ON interactions(date, time, question)
     """)
 
+    # Regular indexes for faster queries
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_interactions_date ON interactions(date)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_interactions_match_score ON interactions(match_score)")
+
     # Table for daily reports
     cur.execute("""
     CREATE TABLE IF NOT EXISTS daily_reports (
