@@ -171,37 +171,21 @@ def update_db_reports(data, report_text, report_type="daily_reports"):
     }).execute()
     print(f"✅ Saved report for {data['date']}")
 
-def fetch_past_week_reports(today, db_path: str = DB_PATH + DB_NAME):
+def fetch_past_week_reports(today):
     """Fetch daily reports from the last 7 days."""
     one_week_ago = today - timedelta(days=7)
+    res = supabase.table("daily_reports").select("*") \
+        .gte("date", one_week_ago.isoformat()) \
+        .lte("date", today.isoformat()) \
+        .order("date", ascending=True).execute()
+    return res.data  # TODO return also the date and the week range...???
 
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-
-    # Assuming `date` is stored in ISO format 'YYYY-MM-DD'
-    cur.execute("""
-        SELECT * FROM daily_reports
-        WHERE date BETWEEN ? AND ?
-        ORDER BY date ASC
-    """, (one_week_ago.isoformat(), today.isoformat()))
-
-    reports = cur.fetchall()
-    conn.close()
-    return reports  # TODO return also the date and the week range...???
-
-def fetch_past_month_reports(today, db_path: str = DB_PATH + DB_NAME):
+def fetch_past_month_reports(today):
     """Fetch weekly reports from the last calendar month."""
     first_day_this_month = today.replace(day=1)
 
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT * FROM weekly_reports
-        WHERE date BETWEEN ? AND ?
-        ORDER BY date ASC
-    """, (first_day_this_month.isoformat(), today.isoformat()))
-
-    reports = cur.fetchall()
-    conn.close()
-    return reports
+    res = supabase.table("weekly_reports").select("*") \
+        .gte("date", first_day_this_month.isoformat()) \
+        .lte("date", today.isoformat()) \
+        .order("date", ascending=True).execute()
+    return res.data
