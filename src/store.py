@@ -89,6 +89,12 @@ def init_db(db_path: str = DB_PATH + DB_NAME):
     )
     """)
 
+    # Unique index to prevent duplicate questions at the same date & time
+    cur.execute("""
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_interactions_unique
+    ON interactions(date, time, question)
+    """)
+
     # Table for daily reports
     cur.execute("""
     CREATE TABLE IF NOT EXISTS daily_reports (
