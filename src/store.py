@@ -16,8 +16,14 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-CLIENT = chromadb.PersistentClient(path=DB_PATH)
-COLLECTION = CLIENT.get_or_create_collection(name="questions")
+# CLIENT = chromadb.PersistentClient(path=DB_PATH)
+CHROMA_KEY = os.getenv("CHROMA_KEY")
+client = chromadb.CloudClient(
+  api_key=CHROMA_KEY,
+  tenant='2b20ce89-8d98-4de1-8644-51260fb2110c',
+  database='Test'
+)
+COLLECTION = client.get_or_create_collection(name="interactions")
 
 def stable_id(date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
