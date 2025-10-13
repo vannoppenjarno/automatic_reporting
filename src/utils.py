@@ -36,17 +36,26 @@ def add_question_embeddings(data):
         log["embedding"] = embed(log["question"])
     return data
 
-def cluster_questions(questions, embeddings, min_cluster_size=2):
+def cluster_questions(data, min_cluster_size=2):
     """
-    Cluster embeddings with HDBSCAN and return cluster assignments.
+    Cluster embeddings from the data dict using HDBSCAN.
+    
+    Args:
+        data: dict containing 'logs', where each log has 'question' and 'embedding'.
+        min_cluster_size: minimum cluster size for HDBSCAN.
+    
     Returns:
-      - clusters: dict {cluster_label: list of question indices}
-      - noise: list of indices labeled as noise (-1)
+        clusters: dict {cluster_label: list of question indices in data['logs']}
+        noise: list of indices labeled as noise (-1)
     """
-    if len(questions) < 2:
-        return {0: list(range(len(questions)))}, []
+    logs = data.get("logs", [])
+    if len(logs) < 2:
+        return {0: list(range(len(logs)))}, []
 
-    X = np.array(embeddings)
+    # Extract embeddings
+    X = np.array([log["embedding"] for log in logs])
+
+    # HDBSCAN clustering
     clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size)
     labels = clusterer.fit_predict(X)
 
@@ -88,27 +97,30 @@ def get_representative_questions(indices, questions, embeddings):
 
     return [freq_question, centroid_question]
 
-def format_clusters_for_llm(clusters, noise, questions, embeddings, metadatas):
+def format_clusters_for_llm(data, clusters, noise):
     """
-    Format clusters for LLM using questions and metadata.
+    Format clusters for LLM using data['logs'].
     
     Args:
-      clusters: dict {cluster_id: list of question indices}
-      noise: list of question indices
-      questions: list of question texts
-      metadatas: list of dicts containing metadata (match_score, date, time, etc.)
+        data: dict containing 'logs', where each log has 'question', 'embedding', and metadata (match_score, date, time, etc.)
+        clusters: dict {cluster_id: list of question indices in data['logs']}
+        noise: list of question indices labeled as noise (-1)
     
     Returns:
-      str: nicely formatted plain text
+        str: nicely formatted plain text for LLM
     """
+    logs = data.get("logs", [])
+    questions = [log["question"] for log in logs]
+    embeddings = [log["embedding"] for log in logs]
+    scores = [float(log.get("match_score", 0)) for log in logs]
     output_lines = []
 
     for cluster_id, indices in clusters.items():
         cluster_questions = [questions[i] for i in indices]
-        cluster_scores = [metadatas[i].get("match_score", 0) for i in indices]
+        cluster_scores = [scores[i] for i in indices]
         avg_score = sum(cluster_scores) / len(cluster_scores) if cluster_scores else 0
 
-        # Simple representative question: first question (can improve later)
+        # Representative questions
         representative_questions = get_representative_questions(indices, questions, embeddings)
 
         output_lines.append(f"=== Cluster {cluster_id} ===")
@@ -124,7 +136,7 @@ def format_clusters_for_llm(clusters, noise, questions, embeddings, metadatas):
         output_lines.append("=== Noise / Unclustered Questions ===")
         for i in noise:
             question = questions[i]
-            score = metadatas[i].get("match_score", 0)
+            score = scores[i]
             output_lines.append(f"- {question} | Match Score: {score:.2f}%")
         output_lines.append("")
 

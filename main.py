@@ -3,7 +3,7 @@ import calendar
 from datetime import datetime
 from src.fetch import fetch_emails, parse_email
 from src.prompt import create_daily_prompt, generate_report, create_weekly_prompt, create_monthly_prompt
-from src.store import store_questions, fetch_embeddings_by_date, save_report, init_db, update_db, fetch_past_week_reports, fetch_past_month_reports
+from src.store import save_report, init_db, update_db_interactions, update_db_reports, fetch_past_week_reports, fetch_past_month_reports
 from src.utils import calculate_totals, add_question_embeddings, cluster_questions, format_clusters_for_llm
 from dotenv import load_dotenv
 
@@ -27,11 +27,10 @@ def main_daily():
     for date, email_list in emails.items():
         data = parse_email(date, email_list)
         data = add_question_embeddings(data)  # Embed questions in the data
-        
-        store_questions(data)  # Store questions in the vector database
-        questions, embeddings, metadatas = fetch_embeddings_by_date(date)  # Fetch embeddings for clustering
-        clusters, noise = cluster_questions(questions, embeddings)  # Cluster questions based on embeddings
-        logs_text = format_clusters_for_llm(clusters, noise, questions, embeddings, metadatas)
+        update_db_interactions(data)  # Store interactions in both the relational and vector DB
+        clusters, noise = cluster_questions(data)  # Cluster questions based on embeddings
+
+        logs_text = format_clusters_for_llm(data, clusters, noise)
         print(logs_text)  # For debugging
 
         # Generate structured daily report with LLM
@@ -39,7 +38,7 @@ def main_daily():
         report = generate_report(prompt, data)
 
         save_report(report, data["date"])  # EXTRA Save markdown file for quick easy access
-        update_db(data, report)  # Save interactions + report in the SQLite database
+        update_db_reports(data, report)  # Save interactions + report in the SQLite database
 
 def main_weekly(date):
     # Fetch past week's reports
@@ -59,7 +58,7 @@ def main_weekly(date):
 
     # Save weekly report
     save_report(weekly_report, f"week_{date.isocalendar()[1]}")  # EXTRA
-    update_db(totals, weekly_report, report_type="weekly_reports")
+    update_db_reports(totals, weekly_report, report_type="weekly_reports")
 
 def main_monthly(date):
     # Fetch past month's reports
@@ -79,7 +78,7 @@ def main_monthly(date):
 
     # Save monthly report
     save_report(monthly_report, f"month_{date.month}_{date.year}")  # EXTRA
-    update_db(totals, monthly_report, report_type="monthly_reports")
+    update_db_reports(totals, monthly_report, report_type="monthly_reports")
 
 
 
