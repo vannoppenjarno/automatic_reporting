@@ -25,13 +25,13 @@ def store_questions(data):
         embedded_question = embed_question(question)
         collection.add(
             documents=[question],
-            metadatas={
+            metadatas=[{
                 "answer": log["answer"], 
                 "match_score": float(log["match_score"].replace("%", "")), 
                 "date": data["date"], 
                 "time": log["time"]
-            },
-            ids=[f"{data["date"]}_{hash(question)}"],
+            }],
+            ids=[f"{data['date']}_{hash(question)}"],
             embeddings=[embedded_question]
         )
     return
@@ -45,7 +45,7 @@ def fetch_embeddings_by_date(date):
     )
     
     questions = results['documents'] if results['documents'] else []
-    embeddings = results['embeddings'] if len(results['embeddings']) > 0 else []
+    embeddings = results['embeddings'] if results['embeddings'] else []
     metadatas = results['metadatas'] if results['metadatas'] else []
 
     return questions, embeddings, metadatas
