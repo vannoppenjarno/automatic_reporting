@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 import chromadb
 import sqlite3
+import hashlib
 import os
 
 load_dotenv()
@@ -11,6 +12,10 @@ SENTENCE_EMBEDDING_MODEL = os.getenv("SENTENCE_EMBEDDING_MODEL")
 REPORTS_DIR = os.getenv("REPORTS_DIR")
 DB_PATH = os.getenv("DB_PATH")
 DB_NAME = os.getenv("DB_NAME")
+
+def stable_id(date: str, time: str, question: str) -> str:
+    q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
+    return f"{date}_{time}_{q_hash}"
 
 embedder = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)
 def embed_question(question):
@@ -31,7 +36,7 @@ def store_questions(data):
                 "date": data["date"], 
                 "time": log["time"]
             }],
-            ids=[f"{data['date']}_{hash(question)}"],
+            ids=[stable_id(data["date"], log["time"], question)],
             embeddings=[embedded_question]
         )
     return
