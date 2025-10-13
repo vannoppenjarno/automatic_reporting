@@ -1,3 +1,4 @@
+from supabase import create_client
 from dotenv import load_dotenv
 from datetime import timedelta
 import chromadb
@@ -10,6 +11,10 @@ load_dotenv()
 REPORTS_DIR = os.getenv("REPORTS_DIR")
 DB_PATH = os.getenv("DB_PATH")
 DB_NAME = os.getenv("DB_NAME")
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 CLIENT = chromadb.PersistentClient(path=DB_PATH)
 COLLECTION = CLIENT.get_or_create_collection(name="questions")
@@ -103,11 +108,8 @@ def init_db(db_path: str = DB_PATH + DB_NAME):
     conn.commit()
     conn.close()
 
-def update_db_interactions(data, db_path: str = DB_PATH + DB_NAME):
-    """Insert interactions into both the relational and vector database."""
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-
+def update_db_interactions(data):
+    """Insert interactions into Supabase and Chroma Cloud."""
     date = data["date"]
     for log in data["logs"]:
         Q = log["question"]
@@ -116,23 +118,20 @@ def update_db_interactions(data, db_path: str = DB_PATH + DB_NAME):
         T = log["time"]
         E = log["embedding"]
 
-        # 1️⃣ Relational DB
+        # 1️⃣ Supabase insert (Relational DB)
         try:
-            cur.execute("""
-                INSERT INTO interactions (date, question, answer, match_score, time, embedding)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                date,
-                Q,
-                A,
-                S,
-                T,
-                E.tobytes()
-            ))
-        except sqlite3.IntegrityError:
-            print(f"⚠️ Duplicate entry for question on {data['date']} at {log['time']}: {log['question'][:30]}... Skipping.")
+            supabase.table("interactions").insert({
+                "date": date,
+                "time": T,
+                "question": Q,
+                "answer": A,
+                "match_score": S,
+                "embedding": bytes(E)  # convert numpy array to bytes
+            }).execute()
+        except Exception as e:
+            print(f"⚠️ Duplicate or error: {Q[:30]}... {e}")
 
-        # 2️⃣ Vector DB
+        # 2️⃣ Chroma Cloud (Vector DB)
         COLLECTION.add(
             documents=[Q],
             metadatas=[{
@@ -143,10 +142,8 @@ def update_db_interactions(data, db_path: str = DB_PATH + DB_NAME):
             }],
             ids=[stable_id(date, T, Q)],
             embeddings=[E]
-        )
-
-    conn.commit()
-    conn.close()
+            )
+        
     print(f"✅ Stored {len(data['logs'])} questions in both Relational and Vector DB for {data['date']}")
     return
 
