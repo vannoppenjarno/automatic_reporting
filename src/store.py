@@ -84,7 +84,8 @@ def init_db(db_path: str = DB_PATH + DB_NAME):
         question TEXT,
         answer TEXT,
         match_score REAL,
-        time TEXT
+        time TEXT,
+        embedding BLOB
     )
     """)
 
