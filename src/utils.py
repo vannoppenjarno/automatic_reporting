@@ -1,7 +1,15 @@
 from sklearn.metrics.pairwise import euclidean_distances
+from sentence_transformers import SentenceTransformer
 from collections import Counter
+from dotenv import load_dotenv
 import numpy as np
 import hdbscan
+import os
+
+load_dotenv()
+
+SENTENCE_EMBEDDING_MODEL = os.getenv("SENTENCE_EMBEDDING_MODEL")
+EMBEDDER = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)
 
 def calculate_totals(reports):
     date = reports[0][1] if reports else ""
@@ -18,6 +26,15 @@ def calculate_totals(reports):
         "complete_misses_rate": overall_complete_misses_rate,
     }
     return totals
+
+def embed(text):
+    return EMBEDDER.encode(text, normalize_embeddings=True).tolist()  # returns list of vectors
+
+def add_question_embeddings(data):
+    """Embed all questions in the data dict in-place."""
+    for log in data["logs"]:
+        log["embedding"] = embed(log["question"])
+    return data
 
 def cluster_questions(questions, embeddings, min_cluster_size=2):
     """

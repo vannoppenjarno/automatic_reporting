@@ -1,4 +1,3 @@
-from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 from datetime import timedelta
 import chromadb
@@ -8,7 +7,6 @@ import os
 
 load_dotenv()
 
-SENTENCE_EMBEDDING_MODEL = os.getenv("SENTENCE_EMBEDDING_MODEL")
 REPORTS_DIR = os.getenv("REPORTS_DIR")
 DB_PATH = os.getenv("DB_PATH")
 DB_NAME = os.getenv("DB_NAME")
@@ -17,17 +15,12 @@ def stable_id(date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
     return f"{date}_{time}_{q_hash}"
 
-embedder = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)
-def embed_question(question):
-    return embedder.encode(question, normalize_embeddings=True).tolist()  # returns list of vectors
-
 client = chromadb.PersistentClient(path=DB_PATH)
 collection = client.get_or_create_collection(name="questions")
 def store_questions(data):
     """Store questions and their embeddings in the vector database."""
     for log in data["logs"]:
         question = log["question"]
-        embedded_question = embed_question(question)
         collection.add(
             documents=[question],
             metadatas=[{
@@ -37,7 +30,7 @@ def store_questions(data):
                 "time": log["time"]
             }],
             ids=[stable_id(data["date"], log["time"], question)],
-            embeddings=[embedded_question]
+            embeddings=[log["embedding"]]
         )
     return
 
