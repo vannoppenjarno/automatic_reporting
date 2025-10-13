@@ -1,9 +1,15 @@
 from simplegmail import Gmail
 from bs4 import BeautifulSoup
 from collections import defaultdict
+from dotenv import load_dotenv
+import os
 
-SUBJECT_PATTERN = "jarno"
-SENDER_PATTERN = "mail@i.no-reply-messages.com"
+# Load environment variables from .env file
+load_dotenv()
+
+# Access variables
+SUBJECT_PATTERN = os.getenv("SUBJECT_PATTERN")
+SENDER_PATTERN = os.getenv("SENDER_PATTERN")
 
 def filter_emails(email):
     """Filter emails based on subject and sender patterns."""
@@ -28,7 +34,7 @@ def fetch_emails():
     return sorted_emails
 
 def parse_email(date, email_list):
-    """Parse a list of emails for a specific date and extract Q&A logs and metrics."""
+    """Parse a list of emails for a specific date, extract Q&A logs and metrics, and store it in a data dictionary."""
     complete_misses = 0
     accumulated_match = 0
     logs = []

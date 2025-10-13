@@ -1,9 +1,54 @@
+from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
 from datetime import timedelta
+import chromadb
 import sqlite3
 import os
 
-REPORTS_DIR = "reports"
-DB_PATH = "insights.db"
+load_dotenv()
+
+SENTENCE_EMBEDDING_MODEL = os.getenv("SENTENCE_EMBEDDING_MODEL")
+REPORTS_DIR = os.getenv("REPORTS_DIR")
+DB_PATH = os.getenv("DB_PATH")
+DB_NAME = os.getenv("DB_NAME")
+
+embedder = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)
+def embed_question(question):
+    return embedder.encode(question, normalize_embeddings=True).tolist()  # returns list of vectors
+
+client = chromadb.PersistentClient(path=DB_PATH)
+collection = client.get_or_create_collection(name="questions")
+def store_questions(data):
+    """Store questions and their embeddings in the vector database."""
+    for log in data["logs"]:
+        question = log["question"]
+        embedded_question = embed_question(question)
+        collection.add(
+            documents=[question],
+            metadatas=[{
+                "answer": log["answer"], 
+                "match_score": float(log["match_score"].replace("%", "")), 
+                "date": data["date"], 
+                "time": log["time"]
+            }],
+            ids=[f"{data['date']}_{hash(question)}"],
+            embeddings=[embedded_question]
+        )
+    return
+
+def fetch_embeddings_by_date(date):
+    """Fetch all question embeddings and their metadata for a given date."""
+    # Chroma allows filtering by metadata (date in this case)
+    results = collection.get(
+        where={"date": date},
+        include=["documents", "metadatas", "embeddings"]
+    )
+    
+    questions = results['documents'] if results['documents'] else []
+    embeddings = results['embeddings'] if results['embeddings'] else []
+    metadatas = results['metadatas'] if results['metadatas'] else []
+
+    return questions, embeddings, metadatas
 
 def save_report(report_text, date, folder=REPORTS_DIR):
     """Save the daily report as a markdown file in the reports folder."""
@@ -21,7 +66,7 @@ def save_report(report_text, date, folder=REPORTS_DIR):
 
     print(f"✅ Report saved: {filepath}")
 
-def init_db(db_path: str = DB_PATH):
+def init_db(db_path: str = DB_PATH + DB_NAME):
     """Create database schema if it does not exist."""
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
@@ -79,7 +124,7 @@ def init_db(db_path: str = DB_PATH):
     conn.commit()
     conn.close()
 
-def update_db(parsed_email, report_text, report_type="daily_reports", db_path: str = DB_PATH):
+def update_db(parsed_email, report_text, report_type="daily_reports", db_path: str = DB_PATH + DB_NAME):
     """
     Save parsed interactions and the generated daily report into the database.
     parsed_email is the dict from parse_email()
@@ -119,7 +164,7 @@ def update_db(parsed_email, report_text, report_type="daily_reports", db_path: s
     conn.close()
     print(f"✅ Saved report and {parsed_email['n_logs']} interactions for {parsed_email['date']}")
 
-def fetch_past_week_reports(today, db_path: str = DB_PATH):
+def fetch_past_week_reports(today, db_path: str = DB_PATH + DB_NAME):
     """Fetch daily reports from the last 7 days."""
     one_week_ago = today - timedelta(days=7)
 
@@ -137,7 +182,7 @@ def fetch_past_week_reports(today, db_path: str = DB_PATH):
     conn.close()
     return reports  # TODO return also the date and the week range...???
 
-def fetch_past_month_reports(today, db_path: str = DB_PATH):
+def fetch_past_month_reports(today, db_path: str = DB_PATH + DB_NAME):
     """Fetch weekly reports from the last calendar month."""
     first_day_this_month = today.replace(day=1)
 

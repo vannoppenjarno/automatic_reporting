@@ -9,3 +9,13 @@ __pycache__/
 
 # ignore sqlite database files
 *.db
+
+# ignore environment files
+.env
+
+# ignore log files
+*.log
+*.bin
+
+# ignore sqlite3 database files
+*.sqlite3
