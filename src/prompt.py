@@ -34,28 +34,34 @@ def create_daily_prompt(logs_text, date):
 
     # Consistent prompt
     prompt = f"""
-    Generate a report in JSON format based on pre-clustered interaction logs.
+    Generate a daily report in JSON format based on pre-clustered interaction logs.
     Important: Respond in valid JSON only (no extra text) and strictly follow the structure provided below.
 
     JSON template: {json.dumps(report_structure, indent=2)}
 
     Instructions for topics:
-    - Use each cluster to generate a descriptive topic label.
+    - Generate a broad, descriptive topic label for each cluster, based on all questions in that cluster.
     - Include for each topic: observation, implication, strategic_alignment, recommendation, decision_required.
     - Include the pre-calculated representative_questions for each cluster (highest_frequency, closest_to_centroid).
-    - Include question_count and average_match_score per topic.
+    - Use the number of questions and the average match score in each cluster to determine and include question_count and average_match_score per topic.
     - Sort topics from most frequent to least frequent.
 
-    Instructions for recommended_actions:
-    - Suggest up to 5 actions, considering cost efficiency and potential impact.
-    - Use context about low scoring clusters, knowledge gaps, and frequency.
-    - Include priority (immediate | short-term | mid-term | long-term), recommendation text, and expected impact.
+    Instructions for recommendations:
+    - Suggest recommendations taking into account the following context {context}.
+    - Try to have an alternative to the recommended action, considering cost efficiency, potential impact, and alignment with strategic objectives.
+    - Recommendations should reflect insights from low scoring clusters, knowledge gaps, and frequency trends.
+    - Include priority, action, optional alternative action, and expected impact for each recommendation.
 
-    Include an overall_takeaway summarizing the most important insights.
+    Instructions for executive_summary:
+    - Summarize key objectives, status (On Track / At Risk / Off Track), and key decisions needed for management at a glance.
 
+    Include an overall_takeaway summarizing the most important insights across all topics.
+
+    Be sure to take into account the pre-clustering, the pre-calculated average match scores per cluster, the frequency of questions per cluster, and the given representative questions!
+     
     Pre-clustered logs: {logs_text}
 
-    Now generate the JSON output exactly as specified. Do not add extra text outside the JSON.
+    Now generate the JSON output exactly as specified. Do not add extra text outside the JSON. keep it concise, avoid redundancy, and do not invent categories.
     """
     return prompt
 
