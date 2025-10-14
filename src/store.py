@@ -132,7 +132,7 @@ def update_db_interactions(data):
                 "question": Q,
                 "answer": A,
                 "match_score": S,
-                "embedding": bytes(E)  # convert numpy array to bytes
+                "embedding": E
             }).execute()
         except Exception as e:
             print(f"⚠️ Duplicate or error: {Q[:30]}... {e}")
