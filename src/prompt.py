@@ -20,7 +20,7 @@ def get_context():
     """
     Load context from a markdown file.
     """
-    with open(CONTEXT_PATH, 'r') as file:
+    with open(CONTEXT_PATH, 'r', encoding="utf-8") as file:
         context = file.read()
     return context
 
