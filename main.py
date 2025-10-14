@@ -1,9 +1,12 @@
 import calendar
 from datetime import datetime
+from dotenv import load_dotenv  # Import order important!
 from src.fetch import fetch_emails, parse_email
 from src.prompt import create_daily_prompt, generate_report, create_weekly_prompt, create_monthly_prompt
 from src.store import update_db_interactions, update_db_reports, fetch_past_week_reports, fetch_past_month_reports
 from src.utils import calculate_totals, add_question_embeddings, cluster_questions, format_clusters_for_llm
+
+load_dotenv()  # Load environment variables from .env file
 
 def main_daily():
     emails = fetch_emails()

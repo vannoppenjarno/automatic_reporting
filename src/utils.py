@@ -1,12 +1,9 @@
 from sklearn.metrics.pairwise import euclidean_distances
 from sentence_transformers import SentenceTransformer
 from collections import Counter
-from dotenv import load_dotenv
 import numpy as np
 import hdbscan
 import os
-
-load_dotenv()
 
 SENTENCE_EMBEDDING_MODEL = os.getenv("SENTENCE_EMBEDDING_MODEL")
 EMBEDDER = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)

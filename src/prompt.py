@@ -1,10 +1,7 @@
 import ollama
 import json
 from json_repair import repair_json  # ensures valid JSON from LLM
-from dotenv import load_dotenv
 import os
-
-load_dotenv()
 
 REPORT_STRUCTURE_PATH = os.getenv("REPORT_STRUCTURE_PATH")
 CONTEXT_PATH = os.getenv("CONTEXT_PATH")

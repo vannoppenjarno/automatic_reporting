@@ -1,11 +1,7 @@
 from simplegmail import Gmail
 from bs4 import BeautifulSoup
 from collections import defaultdict
-from dotenv import load_dotenv
 import os
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Access variables
 SUBJECT_PATTERN = os.getenv("SUBJECT_PATTERN")
