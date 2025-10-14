@@ -2,7 +2,7 @@ import calendar
 from datetime import datetime
 from src.fetch import fetch_emails, parse_email
 from src.prompt import create_daily_prompt, generate_report, create_weekly_prompt, create_monthly_prompt
-from src.store import save_report, init_db, update_db_interactions, update_db_reports, fetch_past_week_reports, fetch_past_month_reports
+from src.store import update_db_interactions, update_db_reports, fetch_past_week_reports, fetch_past_month_reports
 from src.utils import calculate_totals, add_question_embeddings, cluster_questions, format_clusters_for_llm
 
 def main_daily():
@@ -23,8 +23,6 @@ def main_daily():
         # Generate structured daily report with LLM
         prompt = create_daily_prompt(logs_text, data['date'])
         report = generate_report(prompt, data)
-
-        save_report(report, data["date"])  # EXTRA Save markdown file for quick easy access
         update_db_reports(data, report)  # Save interactions + report in the SQLite database
 
 def main_weekly(date):
@@ -44,7 +42,6 @@ def main_weekly(date):
     weekly_report = generate_report(prompt, totals)
 
     # Save weekly report
-    save_report(weekly_report, f"week_{date.isocalendar()[1]}")  # EXTRA
     update_db_reports(totals, weekly_report, report_type="weekly_reports")
 
 def main_monthly(date):
@@ -64,7 +61,6 @@ def main_monthly(date):
     monthly_report = generate_report(prompt, totals)
 
     # Save monthly report
-    save_report(monthly_report, f"month_{date.month}_{date.year}")  # EXTRA
     update_db_reports(totals, monthly_report, report_type="monthly_reports")
 
 
