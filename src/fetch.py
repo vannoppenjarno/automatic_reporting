@@ -47,17 +47,20 @@ def parse_email(date, email_list):
             answer = qa.find("p").get_text(strip=True)
 
             footer = qa.find("div", class_="qa-footer")
-            match = footer.find("span", class_="match").get_text(strip=True).replace("Match:", "").strip()
+            match_text = footer.find("span", class_="match").get_text(strip=True).replace("Match:", "").strip()
             time = footer.find("span", class_="time").get_text(strip=True)
 
-            if match == "0%":
+            # Convert match_text to float
+            match_score = float(match_text.replace("%", ""))
+
+            if match_score == 0:
                 complete_misses += 1
 
-            accumulated_match += int(match[:-1])  # Remove % sign and convert to int
+            accumulated_match += match_score
             logs.append({
                 "question": question,
                 "answer": answer,
-                "match_score": match,
+                "match_score": match_score,
                 "time": time
             })
 

@@ -120,7 +120,7 @@ def update_db_interactions(data):
     for log in data["logs"]:
         Q = log["question"]
         A = log["answer"]
-        S = float(log["match_score"].replace("%", ""))
+        S = log["match_score"]
         T = log["time"]
         E = log["embedding"]
 

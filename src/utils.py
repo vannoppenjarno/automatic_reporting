@@ -112,7 +112,7 @@ def format_clusters_for_llm(data, clusters, noise):
     logs = data.get("logs", [])
     questions = [log["question"] for log in logs]
     embeddings = [log["embedding"] for log in logs]
-    scores = [float(log.get("match_score", 0)) for log in logs]
+    scores = [log["match_score"] for log in logs]  
     output_lines = []
 
     for cluster_id, indices in clusters.items():
