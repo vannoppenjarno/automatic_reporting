@@ -34,28 +34,28 @@ def create_daily_prompt(logs_text, date):
 
     # Consistent prompt
     prompt = f"""
-    Generate a daily report based on a structured JSON file and pre-clustered interaction logs.
-    Important: Respond in valid JSON only (no extra text) and follow the exact JSON format provided (don't invent sections). Here is the JSON template for the report structure: {json.dumps(report_structure, indent=2)}
+    Generate a report in JSON format based on pre-clustered interaction logs.
+    Important: Respond in valid JSON only (no extra text) and strictly follow the structure provided below.
 
-    Some additional instructions for the topics:
-    - Semantically similar questions are pre-clustered.
-    - Give each cluster a topic based on all questions in that cluster.
-    - Use a broad, descriptive label for topics.
-    - Provide only one representative_question per topic from its corresponding cluster.
-    - Use the number of questions in each cluster to determine topic frequency.
-    - List topics from most frequent to least frequent.
+    JSON template: {json.dumps(report_structure, indent=2)}
 
-    Some additional instructions for the recommended actions:
-    - Suggest recommendations taking into account the following context {context}.
-    - Suggest knowledge base entries that need updating or expanding based on lowest scoring topics (knowledge gaps) and their frequency.
-    - Suggest example questions based on FAQ questions and the highest scoring topics that are already well covered.
-    - Prioritize them in order of cost efficiency: cheapest/easiest to implement and highest potential customer satisfaction.
-    - Keep it short and concise (at most 5 recommendations).
+    Instructions for topics:
+    - Use each cluster to generate a descriptive topic label.
+    - Include for each topic: observation, implication, strategic_alignment, recommendation, decision_required.
+    - Include the pre-calculated representative_questions for each cluster (highest_frequency, closest_to_centroid).
+    - Include question_count and average_match_score per topic.
+    - Sort topics from most frequent to least frequent.
 
-    Here are the pre-clustered interaction logs. Be sure to take into account the pre-clustering, the pre-calculated match scores per cluster, the frequency of questions per cluster, and the given representative questions!:
-    {logs_text}
+    Instructions for recommended_actions:
+    - Suggest up to 5 actions, considering cost efficiency and potential impact.
+    - Use context about low scoring clusters, knowledge gaps, and frequency.
+    - Include priority (immediate | short-term | mid-term | long-term), recommendation text, and expected impact.
 
-    Now generate the JSON output exactly as specified. Do not add extra text outside JSON, keep it concise, avoid redundancy, and do not invent categories.
+    Include an overall_takeaway summarizing the most important insights.
+
+    Pre-clustered logs: {logs_text}
+
+    Now generate the JSON output exactly as specified. Do not add extra text outside the JSON.
     """
     return prompt
 
