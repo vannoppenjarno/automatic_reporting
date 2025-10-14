@@ -2,15 +2,10 @@ from supabase import create_client
 from dotenv import load_dotenv
 from datetime import timedelta
 import chromadb
-import sqlite3
 import hashlib
 import os
 
 load_dotenv()
-
-REPORTS_DIR = os.getenv("REPORTS_DIR")
-DB_PATH = os.getenv("DB_PATH")
-DB_NAME = os.getenv("DB_NAME")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -28,91 +23,6 @@ COLLECTION = client.get_or_create_collection(name="interactions")
 def stable_id(date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
     return f"{date}_{time}_{q_hash}"
-
-def save_report(report_text, date, folder=REPORTS_DIR):
-    """Save the daily report as a markdown file in the reports folder."""
-    # Ensure reports folder exists
-    os.makedirs(folder, exist_ok=True)
-
-    # Normalize date string (e.g., '2025-09-16' → '2025-09-16.json')
-    filename = f"{date}.json"
-
-    # Full path
-    filepath = os.path.join(folder, filename)
-
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(report_text)
-
-    print(f"✅ Report saved: {filepath}")
-
-def init_db(db_path: str = DB_PATH + DB_NAME):
-    """Create database schema if it does not exist."""
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-
-    # Table for individual interactions
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS interactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT,
-        question TEXT,
-        answer TEXT,
-        match_score REAL,
-        time TEXT,
-        embedding BLOB
-    )
-    """)
-
-    # Unique index to prevent duplicate questions at the same date & time
-    cur.execute("""
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_interactions_unique
-    ON interactions(date, time, question)
-    """)
-
-    # Regular indexes for faster queries
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_interactions_date ON interactions(date)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_interactions_match_score ON interactions(match_score)")
-
-    # Table for daily reports
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS daily_reports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT UNIQUE,
-        n_logs INTEGER,
-        average_match REAL,
-        complete_misses INTEGER,
-        complete_misses_rate REAL,
-        report_text TEXT
-    )
-    """)
-
-    # Table for weekly reports
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS weekly_reports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT UNIQUE,
-        n_logs INTEGER,
-        average_match REAL,
-        complete_misses INTEGER,
-        complete_misses_rate REAL,
-        report_text TEXT
-    )""")
-
-    # Table for monthly reports
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS monthly_reports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT UNIQUE,
-        n_logs INTEGER,
-        average_match REAL,
-        complete_misses INTEGER,
-        complete_misses_rate REAL,
-        report_text TEXT
-    )
-    """)
-
-    conn.commit()
-    conn.close()
 
 def update_db_interactions(data):
     """Insert interactions into Supabase and Chroma Cloud."""

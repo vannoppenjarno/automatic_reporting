@@ -1,24 +1,11 @@
-import os
 import calendar
 from datetime import datetime
 from src.fetch import fetch_emails, parse_email
 from src.prompt import create_daily_prompt, generate_report, create_weekly_prompt, create_monthly_prompt
 from src.store import save_report, init_db, update_db_interactions, update_db_reports, fetch_past_week_reports, fetch_past_month_reports
 from src.utils import calculate_totals, add_question_embeddings, cluster_questions, format_clusters_for_llm
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-# Access necessary environment variables
-DB_PATH = os.getenv("DB_PATH")
-DB_NAME = os.getenv("DB_NAME")
 
 def main_daily():
-    # Initialize DB (only first run)
-    if not os.path.exists(DB_PATH + DB_NAME):
-        init_db()
-
     emails = fetch_emails()
     if not emails:
         print("No new emails found.")
