@@ -4,7 +4,7 @@ import streamlit as st
 import json
 import os
 
-# To run the app: streamlit run visualize.py
+# To run the app: python -m streamlit run visualize.py
 
 load_dotenv()  
 
@@ -14,7 +14,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @st.cache_data
 def fetch_reports(report_type="daily_reports"):
-    res = supabase.table(report_type).select("*").order("date", ascending=False).execute()
+    res = supabase.table(report_type).select("*").order("date", desc=False).execute()
     return res.data
 
 st.title("🧭 Mall of Tripla — Visitor Experience & Retail Performance Brief")
