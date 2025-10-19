@@ -1,4 +1,3 @@
-from json_repair import repair_json  # ensures valid JSON from LLM
 from sklearn.metrics.pairwise import euclidean_distances
 from collections import Counter
 from string import Template
@@ -14,6 +13,7 @@ DAILY_PROMPT_TEMPLATE_PATH = os.getenv("DAILY_PROMPT_TEMPLATE_PATH")
 MODEL = os.getenv("MODEL")
 CONTEXT_WINDOW = int(os.getenv("CONTEXT_WINDOW"))
 TOKEN_ENCODING_MODEL = os.getenv("TOKEN_ENCODING_MODEL")
+MAX_QUESTIONS_PER_CLUSTER = int(os.getenv("MAX_QUESTIONS_PER_CLUSTER"))
 
 def get_report_structure(title="Automatic Interaction Report"):
     """
@@ -82,7 +82,7 @@ def get_representative_questions(indices, questions, embeddings):
     else:
         return [freq_question, centroid_question]
 
-def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW):
+def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, max_questions_per_cluster=MAX_QUESTIONS_PER_CLUSTER):
     """
     Format clustered logs for the LLM prompt while respecting the token budget.
     Includes token counting for prompt template, context, and cluster text.
@@ -101,7 +101,7 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW):
     embeddings = [log["embedding"] for log in logs]
     scores = [log["match_score"] for log in logs]
 
-    # --- Load context + prompt and count base tokens ---
+    # --- Load static prompt info and count base tokens ---
     report_structure = get_report_structure()
     context = get_context()
     template = get_daily_prompt_template()
@@ -125,11 +125,23 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW):
     token_count = report_structure_tokens + context_tokens + prompt_tokens  # Track total tokens used
     output_lines = []
     for cid, _, avg_score, size in cluster_info:
-        representative = get_representative_questions(clusters[cid], questions, embeddings)
+
+        # Representative questions 
+        indices = clusters[cid]
+        selected_cluster_questions = get_representative_questions(indices, questions, embeddings)
+
+        # Add more cluster questions (beyond representatives)
+        # Sort by match_score ascending (to get most relevant questions)
+        sorted_idx = sorted(indices, key=lambda i: scores[i])
+        extra_idxs = [i for i in sorted_idx if questions[i] not in selected_cluster_questions][:max_questions_per_cluster]
+        selected_cluster_questions.extend(questions[i] for i in extra_idxs)
+        
+        # Build cluster text
         cluster_text = (
             f"Cluster {cid}\n"
-            f"{representative}\n"
+            f"{selected_cluster_questions}\n"
         )
+
         tokens = count_tokens(cluster_text)
         if token_count + tokens > max_tokens:
             break
@@ -139,12 +151,16 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW):
     # --- Add noise if space left ---
     if noise and token_count < max_tokens * 0.9:
         noise_text = "\nUnclustered Questions\n"
-        sample_lines = [f"- {questions[i]} | Match: {scores[i]:.2f}%" for i in noise[:10]]
+        sample_lines = [f"- {questions[i]} | Match: {scores[i]:.2f}%" for i in noise[:max_questions_per_cluster]]
         noise_block = noise_text + "\n".join(sample_lines)
         noise_tokens = count_tokens(noise_block)
         if token_count + noise_tokens < max_tokens:
             token_count += noise_tokens
             output_lines.append(noise_block)
+
+    # --- Optional debug info ---
+    print(f"Total tokens used: {token_count}/{max_tokens}")
+    print(f"Context: {context_tokens}, Prompt: {prompt_tokens}, Clusters: {token_count - (context_tokens + prompt_tokens)}")
 
     return "\n".join(output_lines)
 
