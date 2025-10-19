@@ -26,7 +26,7 @@ def main_daily():
 
         # Generate structured daily report with LLM
         prompt = create_daily_prompt(logs_text, data['date'])
-        report = generate_report(prompt, data)
+        report = generate_report(prompt)
         update_db_reports(data, report)  # Save interactions + report in the SQLite database
 
 def main_weekly(date):
@@ -43,7 +43,7 @@ def main_weekly(date):
     prompt = create_weekly_prompt(past_week_daily_reports, totals)
 
     # Generate weekly summary report
-    weekly_report = generate_report(prompt, totals)
+    weekly_report = generate_report(prompt)
 
     # Save weekly report
     update_db_reports(totals, weekly_report, report_type="weekly_reports")
@@ -62,7 +62,7 @@ def main_monthly(date):
     prompt = create_monthly_prompt(past_month_weekly_reports, totals)
 
     # Generate monthly summary report
-    monthly_report = generate_report(prompt, totals)
+    monthly_report = generate_report(prompt)
 
     # Save monthly report
     update_db_reports(totals, monthly_report, report_type="monthly_reports")
