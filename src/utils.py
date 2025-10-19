@@ -1,6 +1,4 @@
-from sklearn.metrics.pairwise import euclidean_distances
 from sentence_transformers import SentenceTransformer
-from collections import Counter
 import numpy as np
 import hdbscan
 import os
@@ -65,76 +63,8 @@ def cluster_questions(data, min_cluster_size=2):
             clusters.setdefault(label, []).append(idx)
 
     return clusters, noise
-
-def get_representative_questions(indices, questions, embeddings):
-    """
-    Return 1-2 representative questions for a single cluster:
-      1️⃣ Highest frequency question
-      2️⃣ Closest to centroid (if different)
-    
-    Args:
-      indices: list of question indices in this cluster
-      questions: list of all question texts
-      embeddings: list of all embeddings
-    
-    Returns:
-      list of representative questions (1 or 2 strings)
-    """
-    cluster_questions = [questions[i] for i in indices]
-    cluster_embeddings = np.array([embeddings[i] for i in indices])
-
-    # 1️⃣ Highest frequency question
-    freq_question = Counter(cluster_questions).most_common(1)[0][0]
-
-    # 2️⃣ Closest to centroid
-    centroid = cluster_embeddings.mean(axis=0, keepdims=True)
-    distances = euclidean_distances(cluster_embeddings, centroid)
-    closest_idx = indices[np.argmin(distances)]
-    centroid_question = questions[closest_idx]
-
-    return [freq_question, centroid_question]
-
-def format_clusters_for_llm(data, clusters, noise):
     """
     Format clusters for LLM using data['logs'].
     
-    Args:
-        data: dict containing 'logs', where each log has 'question', 'embedding', and metadata (match_score, date, time, etc.)
-        clusters: dict {cluster_id: list of question indices in data['logs']}
-        noise: list of question indices labeled as noise (-1)
     
-    Returns:
-        str: nicely formatted plain text for LLM
     """
-    logs = data.get("logs", [])
-    questions = [log["question"] for log in logs]
-    embeddings = [log["embedding"] for log in logs]
-    scores = [log["match_score"] for log in logs]  
-    output_lines = []
-
-    for cluster_id, indices in clusters.items():
-        cluster_questions = [questions[i] for i in indices]
-        cluster_scores = [scores[i] for i in indices]
-        avg_score = sum(cluster_scores) / len(cluster_scores) if cluster_scores else 0
-
-        # Representative questions
-        representative_questions = get_representative_questions(indices, questions, embeddings)
-
-        output_lines.append(f"=== Cluster {cluster_id} ===")
-        output_lines.append(f"Question count: {len(cluster_questions)}")
-        output_lines.append(f"Average Match Score: {avg_score:.2f}%")
-        output_lines.append(f"Representative Questions: Highest frequency: {representative_questions[0]}, Closest to centroid: {representative_questions[1]}")
-        output_lines.append("Questions:")
-        for idx, q in enumerate(cluster_questions, 1):
-            output_lines.append(f"{idx}. {q}")
-        output_lines.append("")
-
-    if noise:
-        output_lines.append("=== Noise / Unclustered Questions ===")
-        for i in noise:
-            question = questions[i]
-            score = scores[i]
-            output_lines.append(f"- {question} | Match Score: {score:.2f}%")
-        output_lines.append("")
-
-    return "\n".join(output_lines)
