@@ -73,7 +73,14 @@ def get_representative_questions(indices, questions, embeddings):
     closest_idx = indices[np.argmin(distances)]
     centroid_question = questions[closest_idx]
 
-    return [freq_question, centroid_question]
+    # Normalize for comparison
+    q1 = freq_question.strip().lower()
+    q2 = centroid_question.strip().lower()
+
+    if q1 == q2:
+        return [freq_question]
+    else:
+        return [freq_question, centroid_question]
 
 def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW):
     """
