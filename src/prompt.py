@@ -37,6 +37,13 @@ def create_daily_prompt(logs_text, date):
     Generate a daily report in JSON format based on pre-clustered interaction logs.
     Important: Respond in valid JSON only (no extra text) and strictly follow the structure provided below.
 
+    - Do NOT add any placeholder text like "Continue generating..." or "etc.".
+    - Fill all fields completely based on the provided logs; do not leave instructions or notes in the JSON.
+    - All arrays (topics, executive_summary) must contain actual objects only; do not insert strings or commentary.
+    - Generate the executive_summary array automatically based on the statuses of all topics.
+    - Each executive_summary entry must include: objective, status (On Track / At Risk / Off Track), and key_decision_needed.
+    - Do not skip or truncate this section even if there are many topics.
+
     JSON template: {json.dumps(report_structure, indent=2)}
 
     Instructions for topics:
