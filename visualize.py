@@ -31,31 +31,37 @@ selected_date = st.selectbox("Select Reporting Period", report_dates)
 selected_report = next(r for r in reports if r["date"] == selected_date)
 report_json = json.loads(selected_report["report_text"])  # assuming report_text stores JSON
 
-# Overview
-st.subheader("Overview")
-overview = report_json.get("overview", {})
-st.markdown(f"- Total Questions: {overview.get('total_question_count', '-')}")
-st.markdown(f"- Average Match Score: {overview.get('average_match_score', '-')}")
-st.markdown(f"- Complete Misses: {overview.get('complete_misses', '-')}")
-st.markdown(f"- Complete Misses Rate: {overview.get('complete_misses_rate', '-')}")
-st.markdown(f"- Sentiment: {overview.get('sentiment', '-')}")
-st.markdown(f"- Peak Interaction Times: {overview.get('peak_interaction_times', '-')}")
+# Title
+st.header(report_json.get("title", "Mall of Tripla Report"))
+
+# Visitor Interactions
+st.metric(label="📊 Total Visitor Interactions", value=report_json.get("overview", {}).get("total_question_count", "-"))
 
 # Topics
 st.subheader("Topics & Themes")
 for idx, topic in enumerate(report_json.get("topics", []), 1):
-    st.markdown(f"### {idx}️⃣ Theme: {topic['topic']}")
-    st.markdown(f"**Observation:** {topic.get('observation', '')}")
-    st.markdown(f"**Implication:** {topic.get('implication', '')}")
-    st.markdown(f"**Strategic Alignment:** {topic.get('strategic_alignment', '')}")
-    st.markdown(f"**Recommendation:** {topic.get('recommendation', '')}")
-    st.markdown(f"**Decision Required:** {topic.get('decision_required', '')}")
-    st.markdown("---")
+    st.markdown(f"#### {idx}️⃣ Theme: {topic['topic']}")
+    st.markdown(f"**Observation:** {topic.get('observation', '-')}")
+    st.markdown(f"**Implication:** {topic.get('implication', '-')}")
+    strategic = topic.get("strategic_alignment", {})
+    st.markdown(f"**Strategic Alignment:** {strategic.get('objective', '-')} → Status: {strategic.get('status', '-')}")
 
-# Recommended actions / executive summary
+    recommendation = topic.get("recommendation", {})
+    st.markdown(f"**Recommendation (Priority: {recommendation.get('priority', '-')})**: {recommendation.get('action', '-')}")
+    if recommendation.get("alternative"):
+        st.markdown(f"**Alternative:** {recommendation.get('alternative', '-')}")
+    st.markdown(f"**Expected Impact:** {recommendation.get('impact', '-')}")
+
+    st.markdown(f"**Decision Required:** {topic.get('decision_required', '-')}")
+    st.divider()
+
+# Executive Summary
 st.subheader("🔚 Executive Summary — At a Glance")
-for action in report_json.get("recommended_actions", []):
-    st.markdown(f"- **{action['priority'].capitalize()}**: {action['recommendation']} — Impact: {action['impact']}")
+for summary in report_json.get("executive_summary", []):
+    st.markdown(f"- **Objective:** {summary.get('objective', '-')}")
+    st.markdown(f"  - Status: {summary.get('status', '-')}")
+    st.markdown(f"  - Key Decision Needed: {summary.get('key_decision_needed', '-')}")
+    st.markdown("")
 
 # Overall Takeaway
 st.subheader("🧩 Overall Takeaway")
