@@ -1,6 +1,7 @@
+from json_repair import repair_json  # ensures valid JSON from LLM
+from string import Template
 import ollama
 import json
-from json_repair import repair_json  # ensures valid JSON from LLM
 import os
 
 REPORT_STRUCTURE_PATH = os.getenv("REPORT_STRUCTURE_PATH")
@@ -24,6 +25,14 @@ def get_context():
         context = file.read()
     return context
 
+def get_daily_prompt_template():
+    """
+    Load the daily prompt template from a markdown file.
+    """
+    with open("prompt_template.md", "r", encoding="utf-8") as f:
+        template = Template(f.read())
+    return template
+
 def create_daily_prompt(logs_text, date):
     """
     Create a consistent prompt for generating a daily report from parsed email data.
@@ -31,45 +40,13 @@ def create_daily_prompt(logs_text, date):
     title = f"Daily Interaction Report - {date}"
     report_structure = get_report_structure(title)
     context = get_context()
-
-    # Consistent prompt
-    prompt = f"""
-    Generate a daily report in JSON format based on pre-clustered interaction logs.
-    Important: Respond in valid JSON only (no extra text) and strictly follow the structure provided below.
-
-    - Do NOT add any placeholder text like "Continue generating..." or "etc.".
-    - Fill all fields completely based on the provided logs; do not leave instructions or notes in the JSON.
-    - All arrays (topics, executive_summary) must contain actual objects only; do not insert strings or commentary.
-    - Generate the executive_summary array automatically based on the statuses of all topics.
-    - Each executive_summary entry must include: objective, status (On Track / At Risk / Off Track), and key_decision_needed.
-    - Do not skip or truncate this section even if there are many topics.
-
-    JSON template: {json.dumps(report_structure, indent=2)}
-
-    Instructions for topics:
-    - Generate a broad, descriptive topic label for each cluster, based on all questions in that cluster.
-    - Include for each topic: observation, implication, strategic_alignment, recommendation, decision_required.
-    - Include the pre-calculated representative_questions for each cluster (highest_frequency, closest_to_centroid).
-    - Use the number of questions and the average match score in each cluster to determine and include question_count and average_match_score per topic.
-    - Sort topics from most frequent to least frequent.
-
-    Instructions for recommendations:
-    - Suggest recommendations taking into account the following context {context}.
-    - Try to have an alternative to the recommended action, considering cost efficiency, potential impact, and alignment with strategic objectives.
-    - Recommendations should reflect insights from low scoring clusters, knowledge gaps, and frequency trends.
-    - Include priority, action, optional alternative action, and expected impact for each recommendation.
-
-    Instructions for executive_summary:
-    - Summarize key objectives, status (On Track / At Risk / Off Track), and key decisions needed for management at a glance.
-
-    Include an overall_takeaway summarizing the most important insights across all topics.
-
-    Be sure to take into account the pre-clustering, the pre-calculated average match scores per cluster, the frequency of questions per cluster, and the given representative questions!
-     
-    Pre-clustered logs: {logs_text}
-
-    Now generate the JSON output exactly as specified. Do not add extra text outside the JSON. keep it concise, avoid redundancy, and do not invent categories.
-    """
+    template = get_daily_prompt_template()
+    
+    prompt = template.substitute(
+        json_template=json.dumps(report_structure, indent=2),
+        context=context,
+        logs_text=logs_text
+    )
     return prompt
 
 def add_calculations(json_report, data):
