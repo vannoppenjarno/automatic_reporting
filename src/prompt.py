@@ -120,8 +120,8 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW):
     for cid, _, avg_score, size in cluster_info:
         representative = get_representative_questions(clusters[cid], questions, embeddings)
         cluster_text = (
-            f"=== Cluster {cid} ===\n"
-            f"Representative Questions: {representative}\n"
+            f"Cluster {cid}\n"
+            f"{representative}\n"
         )
         tokens = count_tokens(cluster_text)
         if token_count + tokens > max_tokens:
@@ -131,7 +131,7 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW):
 
     # --- Add noise if space left ---
     if noise and token_count < max_tokens * 0.9:
-        noise_text = "\n=== Noise / Unclustered Questions (sample) ===\n"
+        noise_text = "\nUnclustered Questions\n"
         sample_lines = [f"- {questions[i]} | Match: {scores[i]:.2f}%" for i in noise[:10]]
         noise_block = noise_text + "\n".join(sample_lines)
         noise_tokens = count_tokens(noise_block)
