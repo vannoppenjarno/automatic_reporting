@@ -8,7 +8,7 @@ load_dotenv()  # Load environment variables from .env file
 from src.fetch import fetch_emails, parse_email
 from src.prompt import create_prompt, generate_report, format_clusters_for_llm
 from src.store import update_db_interactions, update_db_reports, fetch_questions
-from src.utils import calculate_totals, add_question_embeddings, cluster_questions
+from src.utils import add_question_embeddings, cluster_questions
 
 def main_daily():
     emails = fetch_emails()
