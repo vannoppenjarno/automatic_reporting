@@ -1,0 +1,29 @@
+{
+  "title": null,
+  "topics": [
+    {
+      "topic": "string — high-level topic/theme",
+      "observation": "string describing main observation",
+      "implication": "string describing implication for mall/retail",
+      "strategic_alignment": {
+        "objective": "string, Quarterly or Annual objective/KPI",
+        "status": "string, e.g., On Track, At Risk, Off Track"
+      },
+      "recommendation": {
+          "priority": "immediate | short-term | mid-term | long-term",
+          "action": "string describing action",
+          "alternative": "string, optional alternative action",
+          "impact": "string describing expected business/customer impact"
+      },
+      "decision_required": "string specifying what management decision is needed"
+    }
+  ],
+  "executive_summary": [
+    {
+      "objective": "string, high-level objective",
+      "status": "string, On Track / At Risk / Off Track",
+      "key_decision_needed": "string"
+    }
+  ],
+  "overall_takeaway": "string summarizing the key insights and actions"
+}
