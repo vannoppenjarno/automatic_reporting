@@ -1,5 +1,4 @@
 from supabase import create_client
-from datetime import timedelta
 import chromadb
 import hashlib
 import os
@@ -83,21 +82,86 @@ def update_db_reports(data, report_text, report_type="daily_reports"):
     print(f"✅ Saved report for {data['date']}")
     return
 
-def fetch_past_week_reports(today):
-    """Fetch daily reports from the last 7 days."""
-    one_week_ago = today - timedelta(days=7)
-    res = supabase.table("daily_reports").select("*") \
-        .gte("date", one_week_ago.isoformat()) \
-        .lte("date", today.isoformat()) \
-        .order("date", ascending=True).execute()
-    return res.data  # TODO return also the date and the week range...???
+def fetch_questions(date_range):
+    """
+    Fetch questions from Supabase within a date range and compute summary statistics.
+    Returns a dict identical in structure to parse_email() output:
+    {
+        "date": "<end_date>",
+        "n_logs": int,
+        "average_match": float,
+        "complete_misses": int,
+        "complete_misses_rate": float,
+        "logs": [ {question, answer, match_score, time, embedding}, ... ]
+    }
+    """
+    start_date, end_date = date_range
 
-def fetch_past_month_reports(today):
-    """Fetch weekly reports from the last calendar month."""
-    first_day_this_month = today.replace(day=1)
+    # Convert to ISO format if needed
+    if hasattr(start_date, "isoformat"):
+        start_date = start_date.isoformat()
+    if hasattr(end_date, "isoformat"):
+        end_date = end_date.isoformat()
 
-    res = supabase.table("weekly_reports").select("*") \
-        .gte("date", first_day_this_month.isoformat()) \
-        .lte("date", today.isoformat()) \
-        .order("date", ascending=True).execute()
-    return res.data
+    try:
+        # Fetch all interactions in range
+        res = (
+            supabase.table("interactions")
+            .select("date, time, question, answer, match_score, embedding")
+            .gte("date", start_date)
+            .lte("date", end_date)
+            .order("date", desc=False)
+            .order("time", desc=False)
+            .execute()
+        )
+        rows = res.data or []
+
+        logs = []
+        accumulated_match = 0.0
+        complete_misses = 0
+
+        for r in rows:
+            q = r["question"]
+            a = r["answer"]
+            s = float(r.get("match_score", 0))
+            t = r["time"]
+            e = r.get("embedding", None)
+
+            logs.append({
+                "question": q,
+                "answer": a,
+                "match_score": s,
+                "time": t,
+                "embedding": e
+            })
+
+            accumulated_match += s
+            if s == 0:
+                complete_misses += 1
+
+        n_logs = len(logs)
+        avg_match = round(accumulated_match / n_logs, 2) if n_logs > 0 else 0
+        complete_misses_rate = round((complete_misses / n_logs) * 100, 2) if n_logs > 0 else 0
+
+        data = {
+            "date": end_date,
+            "n_logs": n_logs,
+            "average_match": avg_match,
+            "complete_misses": complete_misses,
+            "complete_misses_rate": complete_misses_rate,
+            "logs": logs
+        }
+
+        print(f"✅ Fetched {n_logs} questions ({start_date} → {end_date}) | Avg match: {avg_match}% | Misses: {complete_misses}")
+        return data
+
+    except Exception as e:
+        print(f"⚠️ Error fetching questions from {start_date} → {end_date}: {e}")
+        return {
+            "date": end_date,
+            "n_logs": 0,
+            "average_match": 0,
+            "complete_misses": 0,
+            "complete_misses_rate": 0,
+            "logs": []
+        }
