@@ -182,9 +182,13 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
         output_lines.append(noise_block)
         used_tokens += count_tokens(noise_block)
 
-    # --- Diagnostics ---
+    # --- Token Usage Diagnostics ---
+    all_q_text = "\n".join(questions)
+    all_q_tokens = count_tokens(all_q_text)
     print(f"\n🔹 Static tokens: {static_tokens}")
     print(f"🔹 Cluster tokens: {used_tokens - static_tokens}")
+    print(f"🔸 All questions total tokens: {all_q_tokens}")
+    print(f"🔸 % of all questions used: {(used_tokens - static_tokens) / all_q_tokens * 100:.1f}%")
     print(f"🔹 Total tokens: {used_tokens}/{max_tokens} ({used_tokens/max_tokens*100:.1f}% used)\n")
     if used_tokens < max_tokens * 0.98:
         print(f"⚠️ Token underuse: {max_tokens - used_tokens} tokens unused.")
