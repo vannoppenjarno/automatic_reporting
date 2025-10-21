@@ -6,6 +6,7 @@ from google import genai
 import os, json, time
 import numpy as np
 import tiktoken
+import re
 
 REPORT_STRUCTURE_PATH = os.getenv("REPORT_STRUCTURE_PATH")
 CONTEXT_PATH = os.getenv("CONTEXT_PATH")
@@ -224,6 +225,8 @@ def generate_report(prompt, model=MODEL):
         try:
             response = client.models.generate_content(model=model, contents=prompt)
             report_text = response.text.strip()
+            # Remove markdown code fences like ```json ... ```
+            report_text = re.sub(r"^```[a-zA-Z]*\n|```$", "", report_text).strip()
             try:
                 report = json.loads(report_text)   # convert JSON string → dict
             except json.JSONDecodeError:
