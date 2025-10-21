@@ -28,6 +28,7 @@ def main_daily():
         # Generate structured daily report with LLM
         prompt = create_prompt(logs_text, data['date'])
         report = generate_report(prompt)
+        report["total_question_count"] = data["n_logs"]
         update_db_reports(data, report)  # Save interactions + report in the SQLite database
 
 def main_aggregate(date_range, report_type):
@@ -42,6 +43,7 @@ def main_aggregate(date_range, report_type):
     logs_text = format_clusters_for_llm(data, clusters, noise)
     prompt = create_prompt(logs_text, date_range, title=f"{report_type} Interaction Report")
     report = generate_report(prompt)
+    report["total_question_count"] = data["n_logs"]
     update_db_reports(data, report, report_type=report_type)
 
 
