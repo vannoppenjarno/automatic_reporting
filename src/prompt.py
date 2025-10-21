@@ -5,8 +5,7 @@ from string import Template
 from google import genai
 import numpy as np
 import tiktoken
-import json
-import os
+import os, json, time
 
 REPORT_STRUCTURE_PATH = os.getenv("REPORT_STRUCTURE_PATH")
 CONTEXT_PATH = os.getenv("CONTEXT_PATH")
