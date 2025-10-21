@@ -3,9 +3,9 @@ from google.genai.errors import ServerError, ClientError
 from collections import Counter
 from string import Template
 from google import genai
+import os, json, time
 import numpy as np
 import tiktoken
-import os, json, time
 
 REPORT_STRUCTURE_PATH = os.getenv("REPORT_STRUCTURE_PATH")
 CONTEXT_PATH = os.getenv("CONTEXT_PATH")
