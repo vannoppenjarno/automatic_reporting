@@ -1,7 +1,11 @@
-calendar
-datetime
-simplegmail
-bs4
-collections
-ollama
-sqlite3
+simplegmail==4.1.1        # from PyPI :contentReference[oaicite:0]{index=0}
+beautifulsoup4             # version not pinned (you may add one if you have a preference)
+scikit-learn               # version not pinned (add one if you have constraints)
+google-generativeai==0.8.5 # from PyPI :contentReference[oaicite:1]{index=1}
+numpy                      # version not pinned (commonly used)
+tiktoken                   # version not pinned (add one if you have a preference)
+supabase==2.22.0           # from PyPI :contentReference[oaicite:2]{index=2}
+chromadb==1.1.0            # latest release noted as 1.1.0 :contentReference[oaicite:3]{index=3}
+sentence-transformers      # version not pinned (since compatibility may depend on your PyTorch version) :contentReference[oaicite:4]{index=4}
+hdbscan==0.8.40            # from PyPI :contentReference[oaicite:5]{index=5}
+python-dotenv              # for `dotenv` import (version not pinned)
