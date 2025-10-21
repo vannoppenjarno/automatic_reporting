@@ -13,7 +13,7 @@ DAILY_PROMPT_TEMPLATE_PATH = os.getenv("DAILY_PROMPT_TEMPLATE_PATH")
 MODEL = os.getenv("MODEL")
 CONTEXT_WINDOW = int(os.getenv("CONTEXT_WINDOW"))
 TOKEN_ENCODING_MODEL = os.getenv("TOKEN_ENCODING_MODEL")
-MAX_QUESTIONS_PER_CLUSTER = int(os.getenv("MAX_QUESTIONS_PER_CLUSTER"))
+MIN_TOKENS_PER_CLUSTER = int(os.getenv("MIN_TOKENS_PER_CLUSTER"))
 
 def get_report_structure(title="Automatic Interaction Report"):
     """
@@ -82,9 +82,10 @@ def get_representative_questions(indices, questions, embeddings):
     else:
         return [freq_question, centroid_question]
 
-def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, max_questions_per_cluster=MAX_QUESTIONS_PER_CLUSTER):
+def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, min_tokens_per_cluster=MIN_TOKENS_PER_CLUSTER):
     """
-    Format clustered logs for the LLM prompt while respecting the token budget.
+    Dynamically format clustered logs for LLM input, scaling number of questions
+    per cluster by relative importance and using the full token budget.
     Includes token counting for prompt template, context, and cluster text.
 
     Args:
@@ -101,66 +102,94 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, ma
     embeddings = [log["embedding"] for log in logs]
     scores = [log["match_score"] for log in logs]
 
-    # --- Load static prompt info and count base tokens ---
+    # --- Load static prompt info ---
     report_structure = get_report_structure()
     context = get_context()
     template = get_daily_prompt_template()
+
+    # --- Count static tokens ---
     report_structure_tokens = count_tokens(json.dumps(report_structure, indent=2))
     context_tokens = count_tokens(context)
     prompt_tokens = count_tokens(template.template)
+    static_tokens = report_structure_tokens + context_tokens + prompt_tokens  # Track total tokens used
 
+    # --- Reserve dynamic space for clusters ---
+    available_tokens = max_tokens - static_tokens
+    if available_tokens <= 0:
+        raise ValueError("Static prompt exceeds max token limit")
+    
     # --- Compute cluster importance ---
     cluster_info = []
+    total_importance = 0
     for cid, indices in clusters.items():
         cluster_scores = [scores[i] for i in indices]
         avg_score = sum(cluster_scores) / len(cluster_scores)
         size = len(indices)
         importance = size * (1 - avg_score / 100)
         cluster_info.append((cid, importance, avg_score, size))
+        total_importance += importance
 
-    # --- Sort clusters by importance (highest first) ---
+    # --- Sort clusters from most to least important ---
     cluster_info.sort(key=lambda x: x[1], reverse=True)
 
-    # --- Add clusters within token limit ---
-    token_count = report_structure_tokens + context_tokens + prompt_tokens  # Track total tokens used
+    # --- Build output dynamically ---
     output_lines = []
-    for cid, _, avg_score, size in cluster_info:
+    used_tokens = static_tokens
+    for cid, importance, avg_score, size in cluster_info:
+
+        # Relative token budget for this cluster
+        cluster_token_budget = max(min_tokens_per_cluster, int(available_tokens * (importance / total_importance)))
 
         # Representative questions 
         indices = clusters[cid]
-        selected_cluster_questions = get_representative_questions(indices, questions, embeddings)
+        representatives = get_representative_questions(indices, questions, embeddings)
+        cluster_text = f"Cluster {cid}\n"
+        repr_text = [f"{i+1}. {q}" for i, q in enumerate(representatives)]
+        cluster_text += "\n".join(repr_text) + "\n"
 
-        # Add more cluster questions (beyond representatives)
         # Sort by match_score ascending (to get most relevant questions)
-        sorted_idx = sorted(indices, key=lambda i: scores[i])
-        extra_idxs = [i for i in sorted_idx if questions[i] not in selected_cluster_questions][:max_questions_per_cluster]
-        selected_cluster_questions.extend(questions[i] for i in extra_idxs)
+        sorted_indices = sorted(indices, key=lambda i: scores[i])
+
+        # Dynamically add as many questions as fit in the cluster_token_budget
+        for idx, i in enumerate(sorted_indices):
+            if questions[i] in representatives:
+                continue  # Skip representative questions (deduplication)
+            cluster_tokens = count_tokens(cluster_text)
+            q_text = f"{idx + 1 + len(representatives)}. {questions[i]}"
+            q_tokens = count_tokens(q_text)
+            if cluster_tokens + q_tokens > cluster_token_budget:
+                break
+            cluster_text += q_text + "\n"
         
-        # Build cluster text
-        cluster_text = (
-            f"Cluster {cid}\n"
-            f"{selected_cluster_questions}\n"
-        )
-
-        tokens = count_tokens(cluster_text)
-        if token_count + tokens > max_tokens:
+        # Check global budget
+        if used_tokens + cluster_tokens > max_tokens:
             break
-        token_count += tokens
+
         output_lines.append(cluster_text)
+        used_tokens += cluster_tokens
 
-    # --- Add noise if space left ---
-    if noise and token_count < max_tokens * 0.9:
+    # --- Fill any remaining tokens with noise sample ---
+    remaining = max_tokens - used_tokens
+    if noise and remaining > min_tokens_per_cluster:
         noise_text = "\nUnclustered Questions\n"
-        sample_lines = [f"- {questions[i]} | Match: {scores[i]:.2f}%" for i in noise[:max_questions_per_cluster]]
-        noise_block = noise_text + "\n".join(sample_lines)
-        noise_tokens = count_tokens(noise_block)
-        if token_count + noise_tokens < max_tokens:
-            token_count += noise_tokens
-            output_lines.append(noise_block)
+        noise_lines = []
+        for count, i in enumerate(noise):
+            line = f"{count + 1}. {questions[i]}"
+            if count_tokens(noise_text + "\n".join(noise_lines) + line) > remaining:
+                break
+            noise_lines.append(line)
+        noise_block = noise_text + "\n".join(noise_lines)
+        output_lines.append(noise_block)
+        used_tokens += count_tokens(noise_block)
 
-    # --- Optional debug info ---
-    print(f"Total tokens used: {token_count}/{max_tokens}")
-    print(f"Context: {context_tokens}, Prompt: {prompt_tokens}, Clusters: {token_count - (context_tokens + prompt_tokens)}")
+    # --- Diagnostics ---
+    print(f"\n🔹 Static tokens: {static_tokens}")
+    print(f"🔹 Cluster tokens: {used_tokens - static_tokens}")
+    print(f"🔹 Total tokens: {used_tokens}/{max_tokens} ({used_tokens/max_tokens*100:.1f}% used)\n")
+    if used_tokens < max_tokens * 0.98:
+        print(f"⚠️ Token underuse: {max_tokens - used_tokens} tokens unused.")
+    else:
+        print("✅ Token utilization optimal.")
 
     return "\n".join(output_lines)
 
