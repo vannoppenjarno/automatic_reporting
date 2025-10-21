@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           echo "${{ secrets.GMAIL_CLIENT_SECRET_B64 }}" | base64 -d > client_secret.json
-          echo "${{ secrets.GMAIL_TOKEN_B64 }}" | base64 -d > token.json
+          echo "${{ secrets.GMAIL_TOKEN_B64 }}" | base64 -d > gmail_token.json
 
       - name: Run main.py
         env:
@@ -40,9 +40,9 @@ jobs:
           REPORT_STRUCTURE_PATH: "prompt_input/report_structure.json"
           CONTEXT_PATH: "prompt_input/context.md"
           DAILY_PROMPT_TEMPLATE_PATH: "prompt_input/prompt_template.md"
-          MODEL: "gemini-1.5-flash"
+          MODEL: "models/gemini-2.5-flash"
           CONTEXT_WINDOW: 1000000
           TOKEN_ENCODING_MODEL: "cl100k_base"
           MIN_TOKENS_PER_CLUSTER: 200
-          SENTENCE_EMBEDDING_MODEL: "sentence-transformers/intfloat/multilingual-e5-base"
+          SENTENCE_EMBEDDING_MODEL: "intfloat/multilingual-e5-base"
         run: python main.py
