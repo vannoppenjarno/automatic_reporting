@@ -1,11 +1,11 @@
 from sklearn.metrics.pairwise import euclidean_distances
+from google.genai.errors import ServerError, ClientError
 from collections import Counter
 from string import Template
 from google import genai
+import os, json, time
 import numpy as np
 import tiktoken
-import json
-import os
 
 REPORT_STRUCTURE_PATH = os.getenv("REPORT_STRUCTURE_PATH")
 CONTEXT_PATH = os.getenv("CONTEXT_PATH")
@@ -220,9 +220,12 @@ def generate_report(prompt, model=MODEL):
     """
     Generate a report based on a custom prompt using a local Ollama model.
     """
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt
-    )
-    raw_output = response.text
-    return raw_output
+    for attempt in range(5):  # retry up to 5 times
+        try:
+            response = client.models.generate_content(model=model, contents=prompt)
+            return response.text
+        except ServerError as e:
+            print(f"[Attempt {attempt+1}] Gemini server overloaded, retrying in 10 s…")
+            time.sleep(10)
+        except ClientError as e:
+            raise RuntimeError(f"Gemini client error: {e}")
