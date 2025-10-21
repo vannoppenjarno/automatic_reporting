@@ -40,7 +40,7 @@ def main_aggregate(date_range, report_type):
 
     clusters, noise = cluster_questions(data)
     logs_text = format_clusters_for_llm(data, clusters, noise)
-    prompt = create_prompt(logs_text, date_range, title="Weekly Interaction Report")
+    prompt = create_prompt(logs_text, date_range, title=f"{report_type} Interaction Report")
     report = generate_report(prompt)
     update_db_reports(data, report, report_type=report_type)
 
@@ -53,10 +53,10 @@ if __name__ == "__main__":
     if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
         one_week_ago = today.date() - timedelta(days=7)
         date_range = (one_week_ago, today.date())
-        main_aggregate(date_range, report_type="weekly_reports")
+        main_aggregate(date_range, report_type="Weekly")
 
     last_day = calendar.monthrange(today.year, today.month)[1]  # Get the last day of the current month
     if today.day == last_day:  # If today is the end of the month
         first_day_this_month = today.replace(day=1)
         date_range = (first_day_this_month.date(), today.date())
-        main_aggregate(date_range, report_type="monthly_reports")
+        main_aggregate(date_range, report_type="Monthly")
