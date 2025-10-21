@@ -1,7 +1,7 @@
 from sklearn.metrics.pairwise import euclidean_distances
-import google.generativeai as genai
 from collections import Counter
 from string import Template
+from google import genai
 import numpy as np
 import tiktoken
 import json
@@ -16,7 +16,7 @@ TOKEN_ENCODING_MODEL = os.getenv("TOKEN_ENCODING_MODEL")
 MIN_TOKENS_PER_CLUSTER = int(os.getenv("MIN_TOKENS_PER_CLUSTER"))
 LLM_API_KEY = os.getenv("LLM_API_KEY")
 
-genai.configure(api_key=LLM_API_KEY)
+client = genai.Client(api_key=LLM_API_KEY)
 
 def get_report_structure(title="Automatic Interaction Report"):
     """
@@ -220,7 +220,9 @@ def generate_report(prompt, model=MODEL):
     """
     Generate a report based on a custom prompt using a local Ollama model.
     """
-    gemini_model = genai.GenerativeModel(model)
-    response = gemini_model.generate_content(prompt)
+    response = client.models.generate_content(
+        model=model,
+        contents=prompt
+    )
     raw_output = response.text
     return raw_output
