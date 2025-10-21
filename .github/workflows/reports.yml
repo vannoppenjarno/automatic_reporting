@@ -44,5 +44,5 @@ jobs:
           CONTEXT_WINDOW: 1000000
           TOKEN_ENCODING_MODEL: "cl100k_base"
           MIN_TOKENS_PER_CLUSTER: 200
-          SENTENCE_EMBEDDING_MODEL: "sentence-transformers/intfloat/multilingual-e5-base"
+          SENTENCE_EMBEDDING_MODEL: "intfloat/multilingual-e5-base"
         run: python main.py
