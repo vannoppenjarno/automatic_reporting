@@ -224,7 +224,10 @@ def generate_report(prompt, model=MODEL):
         try:
             response = client.models.generate_content(model=model, contents=prompt)
             report_text = response.text.strip()
-            report = json.loads(report_text)   # convert JSON string → dict
+            try:
+                report = json.loads(report_text)   # convert JSON string → dict
+            except json.JSONDecodeError:
+                report = {"raw_output": report_text}  # fallback if not valid JSON
             return report
         except ServerError as e:
             print(f"[Attempt {attempt+1}] Gemini server overloaded, retrying in 10 s…")
