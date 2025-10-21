@@ -215,14 +215,19 @@ def create_prompt(logs_text, date, title="Daily Interaction Report"):
         logs_text=logs_text
     )
     return prompt
-    
+
 def generate_report(prompt, model=MODEL):
     """
     Generate a report based on a custom prompt using a local Ollama model.
     """
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt
-    )
-    raw_output = response.text
-    return raw_output
+    for attempt in range(5):  # retry up to 5 times
+        try:
+            response = client.models.generate_content(model=model, contents=prompt)
+            report_text = response.text.strip()
+            report = json.loads(report_text)   # convert JSON string → dict
+            return report
+        except ServerError as e:
+            print(f"[Attempt {attempt+1}] Gemini server overloaded, retrying in 10 s…")
+            time.sleep(10)
+        except ClientError as e:
+            raise RuntimeError(f"Gemini client error: {e}")
