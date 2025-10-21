@@ -152,9 +152,9 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
 
         # Dynamically add as many questions as fit in the cluster_token_budget
         for idx, i in enumerate(sorted_indices):
+            cluster_tokens = count_tokens(cluster_text)
             if questions[i] in representatives:
                 continue  # Skip representative questions (deduplication)
-            cluster_tokens = count_tokens(cluster_text)
             q_text = f"{idx + 1 + len(representatives)}. {questions[i]}"
             q_tokens = count_tokens(q_text)
             if cluster_tokens + q_tokens > cluster_token_budget:
