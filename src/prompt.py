@@ -1,4 +1,5 @@
 from sklearn.metrics.pairwise import euclidean_distances
+from google.genai.errors import ServerError, ClientError
 from collections import Counter
 from string import Template
 from google import genai
