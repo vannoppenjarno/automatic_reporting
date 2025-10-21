@@ -224,5 +224,6 @@ def generate_report(prompt, model=MODEL):
         model=model,
         contents=prompt
     )
-    raw_output = response.text
-    return raw_output
+    report_text = response.text.strip()
+    report = json.loads(report_text)   # convert JSON string → dict
+    return report
