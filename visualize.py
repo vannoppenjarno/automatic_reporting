@@ -35,7 +35,7 @@ report_json = json.loads(selected_report["report_text"])  # assuming report_text
 st.header(report_json.get("title", "Mall of Tripla Report"))
 
 # Visitor Interactions
-st.metric(label="📊 Total Visitor Interactions", value=json.loads(selected_report["n_logs"]))
+st.metric(label="📊 Total Visitor Interactions", value=selected_report["n_logs"])
 
 # Topics
 st.subheader("Topics & Themes")
