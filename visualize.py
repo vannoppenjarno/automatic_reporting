@@ -13,14 +13,14 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @st.cache_data
-def fetch_reports(report_type="daily_reports"):
+def fetch_reports(report_type="Daily"):
     res = supabase.table(report_type).select("*").order("date", desc=False).execute()
     return res.data
 
 st.title("🧭 Mall of Tripla — Visitor Experience & Retail Performance Brief")
 
 # Select report type
-report_type = st.selectbox("Report Type", ["daily_reports", "weekly_reports", "monthly_reports"])
+report_type = st.selectbox("Report Type", ["Daily", "Weekly", "Monthly"])
 reports = fetch_reports(report_type)
 
 # Select a report
@@ -35,7 +35,7 @@ report_json = json.loads(selected_report["report_text"])  # assuming report_text
 st.header(report_json.get("title", "Mall of Tripla Report"))
 
 # Visitor Interactions
-st.metric(label="📊 Total Visitor Interactions", value=report_json.get("overview", {}).get("total_question_count", "-"))
+st.metric(label="📊 Total Visitor Interactions", value=json.loads(selected_report["n_logs"]))
 
 # Topics
 st.subheader("Topics & Themes")
