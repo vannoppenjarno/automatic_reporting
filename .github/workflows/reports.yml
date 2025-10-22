@@ -2,7 +2,7 @@ name: Run Daily Report
 
 on:
   schedule:
-    - cron: "44 07 * * *"    # run daily at 23:59 UTC
+    - cron: "59 23 * * *"    # run daily at 23:59 UTC
   workflow_dispatch: {}       # allow manual trigger
 
 jobs:
