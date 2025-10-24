@@ -1,5 +1,5 @@
 from supabase import create_client
-import chromadb
+# import chromadb, time
 import hashlib
 import os
 
@@ -7,14 +7,25 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# CLIENT = chromadb.PersistentClient(path=DB_PATH)
-CHROMA_KEY = os.getenv("CHROMA_KEY")
-client = chromadb.CloudClient(
-  api_key=CHROMA_KEY,
-  tenant='2b20ce89-8d98-4de1-8644-51260fb2110c',
-  database='Test'
-)
-COLLECTION = client.get_or_create_collection(name="interactions")
+# CHROMA_KEY = os.getenv("CHROMA_KEY")
+# CHROMA_TENANT = os.getenv("CHROMA_TENANT")
+# CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
+# CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME")
+
+# for attempt in range(3):
+#     try:
+#         client = chromadb.CloudClient(
+#         api_key=CHROMA_KEY,
+#         tenant=CHROMA_TENANT,
+#         database=CHROMA_DATABASE
+#         )
+#         COLLECTION = client.get_or_create_collection(name=CHROMA_COLLECTION_NAME)
+#         break
+#     except Exception as e:
+#         print(f"Connection attempt {attempt+1} failed: {e}")
+#         time.sleep(3)
+# else:
+#     raise RuntimeError("Failed to connect to Chroma Cloud after 3 retries.")
 
 def stable_id(date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
@@ -44,19 +55,20 @@ def update_db_interactions(data):
             print(f"⚠️ Duplicate or error: {Q[:30]}... {e}")
 
         # 2️⃣ Chroma Cloud (Vector DB)
-        COLLECTION.add(
-            documents=[Q],
-            metadatas=[{
-                "answer": A,
-                "match_score": S,
-                "date": date,
-                "time": T
-            }],
-            ids=[stable_id(date, T, Q)],
-            embeddings=[E]
-            )
+        # COLLECTION.add(
+        #     documents=[Q],
+        #     metadatas=[{
+        #         "answer": A,
+        #         "match_score": S,
+        #         "date": date,
+        #         "time": T
+        #     }],
+        #     ids=[stable_id(date, T, Q)],
+        #     embeddings=[E]
+        #     )
         
-    print(f"✅ Stored {len(data['logs'])} questions in both Relational and Vector DB for {data['date']}")
+    # print(f"✅ Stored {len(data['logs'])} questions in both Relational and Vector DB for {data['date']}")
+    print(f"✅ Stored {len(data['logs'])} questions in Relational DB for {data['date']}")
     return
 
 def update_db_reports(data, report_text, report_type="Daily"):
