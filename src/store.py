@@ -1,5 +1,5 @@
 from supabase import create_client
-import chromadb
+import chromadb, time
 import hashlib
 import os
 
@@ -11,12 +11,21 @@ CHROMA_KEY = os.getenv("CHROMA_KEY")
 CHROMA_TENANT = os.getenv("CHROMA_TENANT")
 CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
 CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME")
-client = chromadb.CloudClient(
-  api_key=CHROMA_KEY,
-  tenant=CHROMA_TENANT,
-  database=CHROMA_DATABASE
-)
-COLLECTION = client.get_or_create_collection(name=CHROMA_COLLECTION_NAME)
+
+for attempt in range(3):
+    try:
+        client = chromadb.CloudClient(
+        api_key=CHROMA_KEY,
+        tenant=CHROMA_TENANT,
+        database=CHROMA_DATABASE
+        )
+        COLLECTION = client.get_or_create_collection(name=CHROMA_COLLECTION_NAME)
+        break
+    except Exception as e:
+        print(f"Connection attempt {attempt+1} failed: {e}")
+        time.sleep(3)
+else:
+    raise RuntimeError("Failed to connect to Chroma Cloud after 3 retries.")
 
 def stable_id(date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
