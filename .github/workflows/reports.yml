@@ -1,4 +1,4 @@
-name: Run Daily Report
+name: Daily Automatic Reporting
 
 on:
   schedule:
@@ -34,6 +34,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           CHROMA_KEY: ${{ secrets.CHROMA_KEY }}
+          CHROMA_TENANT: ${{ secrets.CHROMA_TENANT }}
+          CHROMA_DATABASE: "Test"
+          CHROMA_COLLECTION_NAME: "interactions"
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           SUBJECT_PATTERN: "jarno"
           SENDER_PATTERN: "mail@i.no-reply-messages.com"
