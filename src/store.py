@@ -156,7 +156,7 @@ def fetch_questions(date_range):
         complete_misses_rate = round((complete_misses / n_logs) * 100, 2) if n_logs > 0 else 0
 
         data = {
-            "date": end_date,
+            "date": date_range,
             "n_logs": n_logs,
             "average_match": avg_match,
             "complete_misses": complete_misses,
@@ -170,7 +170,7 @@ def fetch_questions(date_range):
     except Exception as e:
         print(f"⚠️ Error fetching questions from {start_date} → {end_date}: {e}")
         return {
-            "date": end_date,
+            "date": date_range,
             "n_logs": 0,
             "average_match": 0,
             "complete_misses": 0,
