@@ -201,11 +201,10 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
 
     return "\n".join(output_lines)
 
-def create_prompt(logs_text, date, title="Daily Interaction Report"):
+def create_prompt(logs_text, title="Daily Interaction Report"):
     """
     Create a consistent prompt for generating a daily report from parsed email data.
     """
-    title = f"{title} - {date}"
     report_structure = get_report_structure(title)
     context = get_context()
     template = get_daily_prompt_template()
