@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     today = datetime.today()
     if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
-        one_week_ago = today.date() - timedelta(days=7)
+        one_week_ago = today.date() - timedelta(days=6)
         date_range = (one_week_ago, today.date())
         main_aggregate(date_range, report_type="Weekly")
 
