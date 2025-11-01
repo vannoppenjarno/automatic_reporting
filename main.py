@@ -61,12 +61,14 @@ def main_csv(csv_file, company_id, talking_product_id):
 
 if __name__ == "__main__":
 
+    # Process daily reports for all active talking products
     active_company_ids = get_active_company_ids()
     for company_id in active_company_ids:
         active_talking_product_ids = get_active_talking_product_ids(company_id)
         for talking_product_id in active_talking_product_ids:
             main_daily(talking_product_id)
 
+    # Process CSV logs for all files in the CSV_LOGS_DIR
     try:
         csv_dir = os.getenv("CSV_LOGS_DIR")  
         csv_files = glob.glob(os.path.join(csv_dir, "*.csv"))
@@ -78,6 +80,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Processing failed for {csv_file}: {e}")
 
+    # Weekly and Monthly aggregation
     today = datetime.today()
     if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
         one_week_ago = today.date() - timedelta(days=6)
@@ -89,3 +92,6 @@ if __name__ == "__main__":
         first_day_this_month = today.replace(day=1)
         date_range = (first_day_this_month.date(), today.date())
         main_aggregate(date_range, report_type="Monthly")
+
+    # Manual aggregation 
+    # main_aggregate(date_range, report_type="Aggregated")
