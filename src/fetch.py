@@ -86,7 +86,7 @@ def parse_csv_logs(csv_path):
     logs = []
 
     with open(csv_path, mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
+        reader = csv.DictReader(f, quotechar='"', skipinitialspace=True)
         rows = list(reader)
 
     # Build structure grouped by date
