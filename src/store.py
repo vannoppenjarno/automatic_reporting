@@ -33,18 +33,18 @@ def stable_id(date: str, time: str, question: str) -> str:
 
 def update_db_interactions(data):
     """Insert interactions into Supabase and Chroma Cloud."""
-    date = data["date"]
     for log in data["logs"]:
         Q = log["question"]
         A = log["answer"]
         S = log["match_score"]
+        D = log["date"]
         T = log["time"]
         E = log["embedding"]
 
         # 1️⃣ Supabase insert (Relational DB)
         try:
             supabase.table("interactions").insert({
-                "date": date,
+                "date": D,
                 "time": T,
                 "question": Q,
                 "answer": A,
@@ -60,10 +60,10 @@ def update_db_interactions(data):
         #     metadatas=[{
         #         "answer": A,
         #         "match_score": S,
-        #         "date": date,
+        #         "date": D,
         #         "time": T
         #     }],
-        #     ids=[stable_id(date, T, Q)],
+        #     ids=[stable_id(D, T, Q)],
         #     embeddings=[E]
         #     )
         

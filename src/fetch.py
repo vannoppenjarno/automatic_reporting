@@ -1,7 +1,8 @@
+from collections import defaultdict
 from simplegmail import Gmail
 from bs4 import BeautifulSoup
-from collections import defaultdict
-import os
+from datetime import datetime
+import os, csv
 
 # Access variables
 SUBJECT_PATTERN = os.getenv("SUBJECT_PATTERN")
@@ -57,6 +58,7 @@ def parse_email(date, email_list):
                 "question": question,
                 "answer": answer,
                 "match_score": match_score,
+                "date": date,
                 "time": time
             })
 
