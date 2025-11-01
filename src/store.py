@@ -192,3 +192,16 @@ def add_company(name: str):
         .execute()
     )
     return ins.data[0]["id"]
+
+def add_talking_product(company_name: str, product_name: str):
+    """Insert a talking product by company name, fetch company id first."""
+    # 1) Ensure company exists / get id
+    company_id = add_company(company_name)
+
+    # 2) Insert talking product (ignore if exists)
+    res = (
+        supabase.table("talking_products")
+        .insert({"company_id": company_id, "name": product_name})
+        .execute()
+    )
+    return res.data[0]["id"] if res.data else None
