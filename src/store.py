@@ -196,21 +196,40 @@ def add_company(name: str):
     )
     return ins.data[0]["id"]
 
-def add_talking_product(company_name: str, product_name: str):
+def add_talking_product(company_name: str, product_name: str, admin_url: str = None, url: str = None, qr_code: str = None):
     """Insert a talking product by company name, fetch company id first."""
+    
     # 1) Ensure company exists / get id
     company_id = add_company(company_name)
 
-    # 2) Insert talking product (ignore if exists)
+    # 2) Build insert payload
+    payload = {
+        "company_id": company_id,
+        "name": product_name,
+        "admin_url": admin_url,
+        "url": url,
+        "qr_code": qr_code
+    }
+
+    # 3) Insert talking product (ignore if exists)
     res = (
         supabase.table("talking_products")
-        .insert({"company_id": company_id, "name": product_name})
+        .insert(payload)
         .execute()
     )
+
     return res.data[0]["id"] if res.data else None
+
+
 
 if __name__ == "__main__":
     company = os.getenv("COMPANY_NAME")
-    products = os.getenv("TALKING_PRODUCTS").split(",")
-    for p in products:
-        add_talking_product(company, p)
+    talking_products = os.getenv("TALKING_PRODUCTS").split(",")
+    admin_urls = os.getenv("TALKING_PRODUCT_ADMIN_URLS", "").split(",")
+    urls = os.getenv("TALKING_PRODUCT_URLS", "").split(",")
+    qr_codes = os.getenv("TALKING_PRODUCT_QR_CODES", "").split(",")
+    for i, p in enumerate(talking_products):
+        admin_url = admin_urls[i] if i < len(admin_urls) else None
+        url = urls[i] if i < len(urls) else None
+        qr_code = qr_codes[i] if i < len(qr_codes) else None
+        add_talking_product(company, p, admin_url=admin_url, url=url, qr_code=qr_code)
