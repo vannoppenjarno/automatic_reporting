@@ -55,7 +55,7 @@ def main_csv(csv_file, company_id, talking_product_id):
 
     prompt = create_prompt(logs_text)
     report = generate_report(prompt)
-    update_db_reports(data, report, report_type="Aggregated", company_id=company_id, talking_product_id=talking_product_id)
+    update_db_reports(data, report, report_type="aggregated", company_id=company_id, talking_product_id=talking_product_id)
 
 
 
