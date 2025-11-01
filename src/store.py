@@ -182,13 +182,7 @@ def fetch_questions(date_range):
         }
     
 def add_company(name: str):
-    """Insert a company if not exists and return its id."""
-    # Try fetch first
-    res = supabase.table("companies").select("id").eq("name", name).single().execute()
-    if res.data:
-        return res.data["id"]
-
-    # Insert if missing
+    """Add a company name and return its id."""
     ins = (
         supabase.table("companies")
         .insert({"name": name})
@@ -196,11 +190,21 @@ def add_company(name: str):
     )
     return ins.data[0]["id"]
 
-def add_talking_product(company_name: str, product_name: str, admin_url: str = None, url: str = None, qr_code: str = None):
+def get_company_id(name: str):
+    """Fetch company id by name, return None if not found."""
+    res = (
+        supabase.table("companies")
+        .select("id")
+        .eq("name", name)
+        .maybe_single()
+        .execute()
+    )
+    return res.data["id"] if res.data else None
+
+def add_talking_product(company_name: str, product_name: str, admin_url=None, url=None, qr_code=None):
     """Insert a talking product by company name, fetch company id first."""
-    
-    # 1) Ensure company exists / get id
-    company_id = add_company(company_name)
+    # 1) Get company id
+    company_id = get_company_id(company_name)
 
     # 2) Build insert payload
     payload = {
@@ -212,18 +216,34 @@ def add_talking_product(company_name: str, product_name: str, admin_url: str = N
     }
 
     # 3) Insert talking product (ignore if exists)
-    res = (
+    ins = (
         supabase.table("talking_products")
         .insert(payload)
         .execute()
     )
 
-    return res.data[0]["id"] if res.data else None
+    return ins.data[0]["id"]
+
+def get_talking_product_id(company_id: str, product_name: str):
+    """Fetch talking product id by company id and product name, return None if not found."""
+    res = (
+        supabase.table("talking_products")
+        .select("id")
+        .eq("company_id", company_id)
+        .eq("name", product_name)
+        .maybe_single()
+        .execute()
+    )
+    return res.data["id"] if res.data else None
 
 
 
 if __name__ == "__main__":
     company = os.getenv("COMPANY_NAME")
+    company_id = get_company_id(company) 
+    if not company_id:
+        company_id = add_company(company)
+
     talking_products = os.getenv("TALKING_PRODUCTS").split(",")
     admin_urls = os.getenv("TALKING_PRODUCT_ADMIN_URLS", "").split(",")
     urls = os.getenv("TALKING_PRODUCT_URLS", "").split(",")
