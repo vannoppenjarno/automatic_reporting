@@ -239,32 +239,21 @@ def add_talking_product(company_name: str, product_name: str, admin_url=None, ur
 
     return ins.data[0]["id"]
 
-def get_active_talking_product_ids():
+def get_active_talking_product_ids(company_id: str):
     """
-    Fetch all active talking products from the talking_products table.
+    Fetch all active talking products for a given company_id.
     Returns a list of talking product IDs.
     """
     res = (
         supabase.table("talking_products")
         .select("id")
+        .eq("company_id", company_id)
         .eq("active", True)
         .execute()
     )
 
     rows = res.data or []
     return [r["id"] for r in rows]
-
-def get_talking_product_id(company_id: str, product_name: str):
-    """Fetch talking product id by company id and product name, return None if not found."""
-    res = (
-        supabase.table("talking_products")
-        .select("id")
-        .eq("company_id", company_id)
-        .eq("name", product_name)
-        .maybe_single()
-        .execute()
-    )
-    return res.data["id"] if res.data else None
 
 def get_company_id_by_talking_product_id(talking_product_id: str):
     """
