@@ -75,3 +75,56 @@ def parse_email(date, email_list):
     }
     
     return data
+
+def parse_csv_logs(csv_path):
+    """
+    Read Talking Product CSV logs and produce the same aggregated data structure
+    as parse_email(), but allow multiple dates inside one CSV.
+    """
+    complete_misses = 0
+    accumulated_match = 0
+    logs = []
+
+    with open(csv_path, mode="r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+
+    # Build structure grouped by date
+    for row in rows:
+        datetime_str = row["Date/Time"].strip()
+        dt = datetime.strptime(datetime_str, "%d/%m/%Y, %H:%M:%S")
+
+        date = dt.strftime("%Y-%m-%d")
+        time = dt.strftime("%H:%M:%S")
+
+        question = row["Statement"].strip()
+        answer = row["Answer"].strip()
+        match_score = float(row["Score"].strip().replace("%", ""))
+
+        if match_score == 0:
+            complete_misses += 1
+
+        accumulated_match += match_score
+
+        logs.append({
+            "question": question,
+            "answer": answer,
+            "match_score": match_score,
+            "date": date,
+            "time": time
+        })
+
+    n_logs = len(logs)
+    complete_misses_rate = round((complete_misses / n_logs) * 100, 2) if n_logs > 0 else 0
+    average_match = round(accumulated_match / n_logs, 2) if n_logs > 0 else 0
+
+    data = {
+        "date": date,
+        "n_logs": n_logs,
+        "average_match": average_match,
+        "complete_misses": complete_misses,
+        "complete_misses_rate": complete_misses_rate,
+        "logs": logs
+    }
+
+    return data
