@@ -34,7 +34,7 @@ def stable_id(date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
     return f"{date}_{time}_{q_hash}"
 
-def update_db_interactions(data):
+def update_db_interactions(data, talking_product_id=None):
     """Insert interactions into Supabase and Chroma Cloud."""
     for log in data["logs"]:
         Q = log["question"]
@@ -52,7 +52,8 @@ def update_db_interactions(data):
                 "question": Q,
                 "answer": A,
                 "match_score": S,
-                "embedding": E
+                "embedding": E,
+                "talking_product_id": talking_product_id
             }).execute()
         except Exception as e:
             print(f"⚠️ Duplicate or error: {Q[:30]}... {e}")
@@ -255,14 +256,14 @@ def get_active_talking_product_ids(company_id: str):
     rows = res.data or []
     return [r["id"] for r in rows]
 
-def get_company_id_by_talking_product_id(talking_product_id: str):
+def get_company_id_by_talking_product_name(talking_product_name: str):
     """
-    Return company_id for a given talking_product_id.
+    Return company_id for a given talking_product_name.
     """
     res = (
         supabase.table("talking_products")
         .select("company_id")
-        .eq("id", talking_product_id)
+        .eq("name", talking_product_name)
         .maybe_single()
         .execute()
     )
