@@ -1,11 +1,11 @@
-import calendar
+import calendar, os, glob
 from datetime import datetime
 from datetime import timedelta
 from dotenv import load_dotenv  # Import order important!
 
 load_dotenv()  # Load environment variables from .env file
 
-from src.fetch import fetch_emails, parse_email
+from src.fetch import fetch_emails, parse_email, parse_csv_logs
 from src.prompt import create_prompt, generate_report, format_clusters_for_llm
 from src.store import update_db_interactions, update_db_reports, fetch_questions
 from src.utils import add_question_embeddings, cluster_questions
@@ -20,8 +20,8 @@ def main_daily():
         data = parse_email(date, email_list)
         data = add_question_embeddings(data)  # Embed questions in the data
         update_db_interactions(data)  # Store interactions in both the relational and vector DB
-        clusters, noise = cluster_questions(data)  # Cluster questions based on embeddings
 
+        clusters, noise = cluster_questions(data)  # Cluster questions based on embeddings
         logs_text = format_clusters_for_llm(data, clusters, noise)
         print(logs_text)  # For debugging
 
@@ -44,10 +44,32 @@ def main_aggregate(date_range, report_type):
     report = generate_report(prompt)
     update_db_reports(data, report, report_type=report_type)
 
+def main_csv(csv_file):
+    data = parse_csv_logs(csv_file)
+    data = add_question_embeddings(data)
+    update_db_interactions(data)
+
+    clusters, noise = cluster_questions(data)
+    logs_text = format_clusters_for_llm(data, clusters, noise)
+    print(logs_text)  # For debugging
+
+    prompt = create_prompt(logs_text)
+    report = generate_report(prompt)
+    update_db_reports(data, report, report_type="Aggregated")
+
 
 
 if __name__ == "__main__":
     main_daily()
+
+    try:
+        csv_dir = os.getenv("CSV_LOGS_DIR")  
+        csv_files = glob.glob(os.path.join(csv_dir, "*.csv"))
+        for csv_file in csv_files:
+            main_csv(csv_file)
+            os.remove(csv_file)  # delete after processing
+    except Exception as e:
+        print(f"Processing failed for {csv_file}: {e}")
 
     today = datetime.today()
     if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
