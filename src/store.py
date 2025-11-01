@@ -256,18 +256,23 @@ def get_active_talking_product_ids(company_id: str):
     rows = res.data or []
     return [r["id"] for r in rows]
 
-def get_company_id_by_talking_product_name(talking_product_name: str):
+def get_ids(talking_product_name: str):
     """
-    Return company_id for a given talking_product_name.
+    Return (talking_product_id, company_id) for a given talking_product_name.
+    Returns (None, None) if not found.
     """
     res = (
         supabase.table("talking_products")
-        .select("company_id")
+        .select("id, company_id")
         .eq("name", talking_product_name)
         .maybe_single()
         .execute()
     )
-    return res.data["company_id"] if res.data else None
+
+    if not res.data:
+        return None, None
+    
+    return res.data["id"], res.data["company_id"]
 
 
 
