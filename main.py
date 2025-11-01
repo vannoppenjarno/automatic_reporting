@@ -74,7 +74,7 @@ if __name__ == "__main__":
         csv_files = glob.glob(os.path.join(csv_dir, "*.csv"))
         for csv_file in csv_files:
             talking_product_name = os.path.splitext(os.path.basename(csv_file))[0]
-            company_id , talking_product_id = get_ids(talking_product_name)
+            talking_product_id, company_id = get_ids(talking_product_name)
             main_csv(csv_file, company_id, talking_product_id)
             os.remove(csv_file)  # delete after processing
     except Exception as e:
