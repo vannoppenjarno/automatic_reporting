@@ -190,20 +190,20 @@ def add_company(name: str):
     )
     return ins.data[0]["id"]
 
-def get_active_companies():
+def get_active_company_ids():
     """
-    Fetch all active company names from the companies table.
-    Returns a list of company names.
+    Fetch all active company IDs from the companies table.
+    Returns a list of company IDs.
     """
     res = (
         supabase.table("companies")
-        .select("name")
+        .select("id")
         .eq("active", True)
         .execute()
     )
 
     rows = res.data or []
-    return [r["name"] for r in rows]
+    return [r["id"] for r in rows]
 
 def get_company_id(name: str):
     """Fetch company id by name, return None if not found."""
