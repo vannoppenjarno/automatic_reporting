@@ -99,7 +99,8 @@ def parse_csv_logs(csv_path):
 
         question = row["Statement"].strip()
         answer = row["Answer"].strip()
-        match_score = float(row["Score"].strip().replace("%", ""))
+        raw_score = row["Score"].strip().replace("%", "")
+        match_score = float(raw_score) if raw_score else 0.0
 
         if match_score == 0:
             complete_misses += 1
