@@ -266,6 +266,19 @@ def get_talking_product_id(company_id: str, product_name: str):
     )
     return res.data["id"] if res.data else None
 
+def get_company_id_by_talking_product_id(talking_product_id: str):
+    """
+    Return company_id for a given talking_product_id.
+    """
+    res = (
+        supabase.table("talking_products")
+        .select("company_id")
+        .eq("id", talking_product_id)
+        .maybe_single()
+        .execute()
+    )
+    return res.data["company_id"] if res.data else None
+
 
 
 if __name__ == "__main__":
