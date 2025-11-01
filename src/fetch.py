@@ -119,7 +119,7 @@ def parse_csv_logs(csv_path):
     average_match = round(accumulated_match / n_logs, 2) if n_logs > 0 else 0
 
     data = {
-        "date": date,
+        "date": datetime.today().strftime("%Y-%m-%d"),  # Timestamp of CSV ingestion
         "n_logs": n_logs,
         "average_match": average_match,
         "complete_misses": complete_misses,
