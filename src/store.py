@@ -177,3 +177,18 @@ def fetch_questions(date_range):
             "complete_misses_rate": 0,
             "logs": []
         }
+    
+def add_company(name: str):
+    """Insert a company if not exists and return its id."""
+    # Try fetch first
+    res = supabase.table("companies").select("id").eq("name", name).single().execute()
+    if res.data:
+        return res.data["id"]
+
+    # Insert if missing
+    ins = (
+        supabase.table("companies")
+        .insert({"name": name})
+        .execute()
+    )
+    return ins.data[0]["id"]
