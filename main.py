@@ -53,7 +53,7 @@ def main_csv(csv_file, company_id, talking_product_id):
     logs_text = format_clusters_for_llm(data, clusters, noise)
     print(logs_text)  # For debugging
 
-    prompt = create_prompt(logs_text)
+    prompt = create_prompt(logs_text, title=f"Aggregated Interaction Report")
     report = generate_report(prompt)
     update_db_reports(data, report, report_type="aggregated", company_id=company_id, talking_product_id=talking_product_id)
 
