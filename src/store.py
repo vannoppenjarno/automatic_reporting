@@ -1,5 +1,6 @@
 from supabase import create_client
 from dotenv import load_dotenv 
+from datetime import datetime
 # import chromadb, time
 import hashlib
 import os
@@ -107,12 +108,15 @@ def update_db_reports(data, report_text, report_type="Daily", company_id=None, t
     print(f"✅ Saved report for {data['date']}")
     return
 
-def fetch_questions(date_range):
+def fetch_questions(date_range, talking_product_id=None, company_id=None):
     """
-    Fetch questions from Supabase within a date range and compute summary statistics.
+    Fetch questions (and compute summary statistics) from Supabase within optional date range based on:
+    1) talking_product_id (if provided)
+    2) otherwise company_id (fetch all products under company)
+
     Returns a dict identical in structure to parse_email() output:
     {
-        "date": "<end_date>",
+        "date": "<start_date>",
         "n_logs": int,
         "average_match": float,
         "complete_misses": int,
@@ -120,44 +124,35 @@ def fetch_questions(date_range):
         "logs": [ {question, answer, match_score, time, embedding}, ... ]
     }
     """
-    start_date, end_date = date_range
+    # Determine date bounds
+    if date_range:
+        start_date, end_date = date_range
+        if hasattr(start_date, "isoformat"): start_date = start_date.isoformat()
+        if hasattr(end_date, "isoformat"): end_date = end_date.isoformat()
+    else:
+        start_date, end_date = None, None
 
-    # Convert to ISO format if needed
-    if hasattr(start_date, "isoformat"):
-        start_date = start_date.isoformat()
-    if hasattr(end_date, "isoformat"):
-        end_date = end_date.isoformat()
-
+    params = {
+        "_talking_product_id": talking_product_id,
+        "_company_id": company_id,
+        "_start_date": start_date,
+        "_end_date": end_date
+    }
+    # Call RPC
     try:
-        # Fetch all interactions in range
-        res = (
-            supabase.table("interactions")
-            .select("date, time, question, answer, match_score, embedding")
-            .gte("date", start_date)
-            .lte("date", end_date)
-            .order("date", desc=False)
-            .order("time", desc=False)
-            .execute()
-        )
-        rows = res.data or []
-
-        logs = []
-        accumulated_match = 0.0
-        complete_misses = 0
+        rows = rpc_paginate("fetch_interactions_filtered", params, batch_size=1000)
+        logs, accumulated_match, complete_misses = [], 0.0, 0
 
         for r in rows:
-            q = r["question"]
-            a = r["answer"]
             s = float(r.get("match_score", 0))
-            t = r["time"]
-            e = r.get("embedding", None)
 
             logs.append({
-                "question": q,
-                "answer": a,
+                "question": r["question"],
+                "answer": r["answer"],
                 "match_score": s,
-                "time": t,
-                "embedding": e
+                "date": r["date"],
+                "time": r["interaction_time"],
+                "embedding": r.get("embedding")
             })
 
             accumulated_match += s
@@ -168,6 +163,10 @@ def fetch_questions(date_range):
         avg_match = round(accumulated_match / n_logs, 2) if n_logs > 0 else 0
         complete_misses_rate = round((complete_misses / n_logs) * 100, 2) if n_logs > 0 else 0
 
+        if start_date is None:
+            start_date = datetime.today().date().isoformat()  # Save generation date if no range provided
+            end_date = start_date
+
         data = {
             "date": start_date,
             "n_logs": n_logs,
@@ -177,7 +176,10 @@ def fetch_questions(date_range):
             "logs": logs
         }
 
-        print(f"✅ Fetched {n_logs} questions ({start_date} → {end_date}) | Avg match: {avg_match}% | Misses: {complete_misses}")
+        print(
+            f"✅ {n_logs} logs | Product={talking_product_id} | Company={company_id} "
+            f"| Range: {start_date} → {end_date} | Avg: {avg_match}% | Misses: {complete_misses}"
+        )
         return data
 
     except Exception as e:
@@ -190,7 +192,30 @@ def fetch_questions(date_range):
             "complete_misses_rate": 0,
             "logs": []
         }
-    
+
+def rpc_paginate(rpc_name, params, batch_size=1000):
+    all_rows = []
+    offset = 0
+
+    while True:
+        chunk_params = params.copy()
+        chunk_params["_limit"] = batch_size
+        chunk_params["_offset"] = offset
+
+        res = supabase.rpc(rpc_name, chunk_params).execute()
+        data = res.data or []
+
+        if not data:
+            break
+
+        all_rows.extend(data)
+        offset += batch_size
+
+        if len(data) < batch_size:
+            break
+
+    return all_rows
+
 def add_company(name: str):
     """Add a company name and return its id."""
     ins = (
