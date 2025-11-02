@@ -73,20 +73,21 @@ if __name__ == "__main__":
         csv_dir = os.getenv("CSV_LOGS_DIR")  
         csv_files = glob.glob(os.path.join(csv_dir, "*.csv"))
         for csv_file in csv_files:
-            talking_product_name = os.path.splitext(os.path.basename(csv_file))[0]
+            talking_product_name = os.path.splitext(os.path.basename(csv_file))[0]  # CSV file name must be equal to the corresponding talking product name!
             talking_product_id, company_id = get_ids(talking_product_name)
             main_csv(csv_file, company_id, talking_product_id)
             os.remove(csv_file)  # delete after processing
     except Exception as e:
         print(f"Processing failed for {csv_file}: {e}")
 
-    # Weekly and Monthly aggregation
+    # Weekly aggregation
     today = datetime.today()
     if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
         one_week_ago = today.date() - timedelta(days=6)
         date_range = (one_week_ago, today.date())
         main_aggregate(date_range, report_type="Weekly")
 
+    # Monthly aggregation
     last_day = calendar.monthrange(today.year, today.month)[1]  # Get the last day of the current month
     if today.day == last_day:  # If today is the end of the month
         first_day_this_month = today.replace(day=1)
