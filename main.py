@@ -7,7 +7,7 @@ load_dotenv()  # Load environment variables from .env file
 
 from src.fetch import fetch_emails, parse_email, parse_csv_logs
 from src.prompt import create_prompt, generate_report, format_clusters_for_llm
-from src.store import update_db_interactions, update_db_reports, fetch_questions, get_active_company_ids, get_active_talking_product_ids, get_ids
+from src.store import update_db_interactions, update_db_reports, fetch_questions, get_active_company_ids, get_active_talking_product_ids, get_ids, get_company_id
 from src.utils import add_question_embeddings, cluster_questions
 
 def main_daily(talking_product_id):
@@ -30,11 +30,13 @@ def main_daily(talking_product_id):
         report = generate_report(prompt)
         update_db_reports(data, report, talking_product_id=talking_product_id)  # Save interactions + report in the SQLite database
 
-def main_aggregate(date_range, report_type):
+def main_aggregate(date_range, report_type, talking_product_id=None, company_id=None):
+    """Generate aggregated reports (Weekly, Monthly, or custom) for given date range and talking product names.
+    The talking product names should be from the same company."""
     # Fetch questions for the given date range
-    data = fetch_questions(date_range)
+    data = fetch_questions(date_range, talking_product_id=talking_product_id, company_id=company_id)
 
-    if not data:
+    if not data or data["n_logs"] == 0:
         print(f"No questions found for date range {date_range}.")
         return
 
@@ -42,7 +44,7 @@ def main_aggregate(date_range, report_type):
     logs_text = format_clusters_for_llm(data, clusters, noise)
     prompt = create_prompt(logs_text, title=f"{report_type} Interaction Report")
     report = generate_report(prompt)
-    update_db_reports(data, report, report_type=report_type)
+    update_db_reports(data, report, report_type=report_type, company_id=company_id, talking_product_id=talking_product_id)
 
 def main_csv(csv_file, company_id, talking_product_id):
     data = parse_csv_logs(csv_file)
@@ -60,6 +62,7 @@ def main_csv(csv_file, company_id, talking_product_id):
 
 
 if __name__ == "__main__":
+    today = datetime.today()
 
     # Process daily reports for all active talking products
     active_company_ids = get_active_company_ids()
@@ -67,6 +70,19 @@ if __name__ == "__main__":
         active_talking_product_ids = get_active_talking_product_ids(company_id)
         for talking_product_id in active_talking_product_ids:
             main_daily(talking_product_id)
+
+            # Weekly aggregation
+            if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
+                one_week_ago = today.date() - timedelta(days=6)
+                date_range = (one_week_ago, today.date())
+                main_aggregate(date_range, report_type="Weekly", talking_product_id=talking_product_id)
+
+            # Monthly aggregation
+            last_day = calendar.monthrange(today.year, today.month)[1]  # Get the last day of the current month
+            if today.day == last_day:  # If today is the end of the month
+                first_day_this_month = today.replace(day=1)
+                date_range = (first_day_this_month.date(), today.date())
+                main_aggregate(date_range, report_type="Monthly", talking_product_id=talking_product_id)
 
     # Process CSV logs for all files in the CSV_LOGS_DIR
     try:
@@ -80,19 +96,10 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Processing failed for {csv_file}: {e}")
 
-    # Weekly aggregation
-    today = datetime.today()
-    if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
-        one_week_ago = today.date() - timedelta(days=6)
-        date_range = (one_week_ago, today.date())
-        main_aggregate(date_range, report_type="Weekly")
-
-    # Monthly aggregation
-    last_day = calendar.monthrange(today.year, today.month)[1]  # Get the last day of the current month
-    if today.day == last_day:  # If today is the end of the month
-        first_day_this_month = today.replace(day=1)
-        date_range = (first_day_this_month.date(), today.date())
-        main_aggregate(date_range, report_type="Monthly")
-
     # Manual aggregation 
-    # main_aggregate(date_range, report_type="Aggregated")
+    manual_aggregation = os.getenv("MANUAL_AGGREGATION_ENABLED", "false").lower() == "true"
+    if manual_aggregation:
+        date_range = os.getenv("MANUAL_AGGREGATION_DATE_RANGE")  
+        company_name = os.getenv("MANUAL_AGGREGATION_COMPANY_NAME")
+        company_id = get_company_id(company_name)
+        main_aggregate(date_range, report_type="aggregated", company_id=company_id)
