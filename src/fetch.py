@@ -86,7 +86,13 @@ def parse_csv_logs(csv_path):
     logs = []
 
     with open(csv_path, mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(f, quotechar='"', skipinitialspace=True)
+        reader = csv.DictReader(
+            f,
+            delimiter=",",
+            quotechar='"',
+            escapechar='\\',
+            skipinitialspace=True
+        )
         rows = list(reader)
 
     # Build structure grouped by date
@@ -100,7 +106,12 @@ def parse_csv_logs(csv_path):
         question = row["Statement"].strip()
         answer = row["Answer"].strip()
         raw_score = row["Score"].strip().replace("%", "")
-        match_score = float(raw_score) if raw_score else 0.0
+        try:
+            match_score = float(raw_score)
+        except:
+            print("SCORE PARSE ERROR:", raw_score, row)
+            raise
+        # match_score = float(raw_score) if raw_score else 0.0
 
         if match_score == 0:
             complete_misses += 1
