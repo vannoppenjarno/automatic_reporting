@@ -1,5 +1,8 @@
 Generate a summary report in JSON format based on pre-clustered interaction logs.
-Important: Respond in valid JSON only (no extra text) and strictly follow the structure provided below.
+Important: 
+- Respond ONLY with valid JSON. No explanations, no markdown, no comments.
+- If the content is too long, summarize fields but keep valid JSON structure.
+- Strictly follow the structure provided below.
 
 JSON template: $json_template
 
