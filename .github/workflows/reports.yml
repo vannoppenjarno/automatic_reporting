@@ -1,8 +1,8 @@
 name: Daily Automatic Reporting
 
 on:
-  schedule:
-    - cron: "59 23 * * *"    # run daily at 23:59 UTC
+  # schedule:
+    # - cron: "59 23 * * *"    # run daily at 23:59 UTC
   workflow_dispatch: {}       # allow manual trigger
 
 jobs:
