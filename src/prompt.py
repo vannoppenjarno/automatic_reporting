@@ -220,8 +220,10 @@ def generate_report(prompt, model=MODEL):
     """
     Generate a report based on a custom prompt using a local Ollama model.
     """
+    last_error = None
     for attempt in range(5):  # retry up to 5 times
         try:
+            client.models.list()   # forces connection, often resets hung workers
             response = client.models.generate_content(model=model, contents=prompt)
             report_text = response.text.strip()
             # Remove markdown code fences like ```json ... ```
@@ -232,7 +234,11 @@ def generate_report(prompt, model=MODEL):
                 report = {"raw_output": report_text}  # fallback if not valid JSON
             return report
         except ServerError as e:
+            last_error = e
             print(f"[Attempt {attempt+1}] Gemini server overloaded, retrying in 10 s…")
             time.sleep(10)
         except ClientError as e:
+            # Client errors are not likely to be fixed by retrying
             raise RuntimeError(f"Gemini client error: {e}")
+    # If we get here, all attempts failed
+    raise RuntimeError(f"Error after 5 attempts: {last_error}")
