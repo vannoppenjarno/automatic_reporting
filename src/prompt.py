@@ -1,8 +1,8 @@
 from sklearn.metrics.pairwise import euclidean_distances
 from google.genai.errors import ServerError, ClientError
+import google.generativeai as genai
 from collections import Counter
 from string import Template
-from google import genai
 import os, json, time
 import numpy as np
 import tiktoken
@@ -16,8 +16,6 @@ CONTEXT_WINDOW = int(os.getenv("CONTEXT_WINDOW"))
 TOKEN_ENCODING_MODEL = os.getenv("TOKEN_ENCODING_MODEL")
 MIN_TOKENS_PER_CLUSTER = int(os.getenv("MIN_TOKENS_PER_CLUSTER"))
 LLM_API_KEY = os.getenv("LLM_API_KEY")
-
-client = genai.Client(api_key=LLM_API_KEY)
 
 def get_report_structure(title="Automatic Interaction Report"):
     """
@@ -223,8 +221,9 @@ def generate_report(prompt, model=MODEL):
     last_error = None
     for attempt in range(5):  # retry up to 5 times
         try:
-            client.models.list()   # forces connection, often resets hung workers
-            response = client.models.generate_content(model=model, contents=prompt)
+            genai.configure(api_key=LLM_API_KEY)
+            model = genai.GenerativeModel(MODEL)
+            response = model.generate_content(prompt)
             report_text = response.text.strip()
             # Remove markdown code fences like ```json ... ```
             report_text = re.sub(r"^```[a-zA-Z]*\n|```$", "", report_text).strip()
