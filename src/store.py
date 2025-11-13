@@ -313,7 +313,9 @@ def get_ids(talking_product_name: str):
 if __name__ == "__main__":
     # run store.py directly to add a company and its talking products from env vars
     company = os.getenv("COMPANY_NAME")
-    company_id = add_company(company)
+    company_id = get_company_id(company)
+    if company_id is None:
+        company_id = add_company(company)
     talking_products = os.getenv("TALKING_PRODUCTS").split(",")
     admin_urls = os.getenv("TALKING_PRODUCT_ADMIN_URLS", "").split(",")
     urls = os.getenv("TALKING_PRODUCT_URLS", "").split(",")
