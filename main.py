@@ -64,27 +64,27 @@ def main_csv(csv_file, company_id, talking_product_id):
 if __name__ == "__main__":
     today = datetime.today()
 
-    # Process daily reports for all active talking products
+    # 1. Process daily reports for all active talking products
     active_company_ids = get_active_company_ids()
     for company_id in active_company_ids:
         active_talking_product_ids = get_active_talking_product_ids(company_id)
         for talking_product_id in active_talking_product_ids:
             main_daily(talking_product_id)
 
-            # Weekly aggregation
+            # 1.1. Weekly aggregation
             if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
                 one_week_ago = today.date() - timedelta(days=6)
                 date_range = (one_week_ago, today.date())
                 main_aggregate(date_range, report_type="Weekly", talking_product_id=talking_product_id)
 
-            # Monthly aggregation
+            # 1.2. Monthly aggregation
             last_day = calendar.monthrange(today.year, today.month)[1]  # Get the last day of the current month
             if today.day == last_day:  # If today is the end of the month
                 first_day_this_month = today.replace(day=1)
                 date_range = (first_day_this_month.date(), today.date())
                 main_aggregate(date_range, report_type="Monthly", talking_product_id=talking_product_id)
 
-    # Process CSV logs for all files in the CSV_LOGS_DIR
+    # 2. Process CSV logs for all files in the CSV_LOGS_DIR
     try:
         csv_dir = os.getenv("CSV_LOGS_DIR")  
         csv_files = glob.glob(os.path.join(csv_dir, "*.csv"))
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Processing failed for {csv_file}: {e}")
 
-    # Manual aggregation 
+    # 2.1. Manual aggregation
     manual_aggregation = os.getenv("MANUAL_AGGREGATION_ENABLED", "false").lower() == "true"
     if manual_aggregation:
         date_range = os.getenv("MANUAL_AGGREGATION_DATE_RANGE")  
