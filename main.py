@@ -6,7 +6,7 @@ from dotenv import load_dotenv  # Import order important!
 load_dotenv()  # Load environment variables from .env file
 
 from src.fetch import fetch_emails, parse_email, parse_csv_logs
-from src.prompt import create_prompt, generate_report, format_clusters_for_llm
+from src.prompt import generate_report, format_clusters_for_llm
 from src.store import update_db_interactions, update_db_reports, fetch_questions, get_active_company_ids, get_active_talking_product_ids, get_ids, get_company_id
 from src.utils import add_question_embeddings, cluster_questions
 
@@ -26,8 +26,7 @@ def main_daily(talking_product_id):
         print(logs_text)  # For debugging
 
         # Generate structured daily report with LLM
-        prompt = create_prompt(logs_text)
-        report = generate_report(prompt)
+        report = generate_report(logs_text)
         update_db_reports(data, report, talking_product_id=talking_product_id)  # Save interactions + report in the SQLite database
 
 def main_aggregate(date_range, report_type, talking_product_id=None, company_id=None):
@@ -42,8 +41,7 @@ def main_aggregate(date_range, report_type, talking_product_id=None, company_id=
 
     clusters, noise = cluster_questions(data)
     logs_text = format_clusters_for_llm(data, clusters, noise)
-    prompt = create_prompt(logs_text)
-    report = generate_report(prompt)
+    report = generate_report(logs_text)
     update_db_reports(data, report, report_type=report_type, company_id=company_id, talking_product_id=talking_product_id)
 
 def main_csv(csv_file, company_id, talking_product_id):
@@ -55,8 +53,7 @@ def main_csv(csv_file, company_id, talking_product_id):
     logs_text = format_clusters_for_llm(data, clusters, noise)
     print(logs_text)  # For debugging
 
-    prompt = create_prompt(logs_text)
-    report = generate_report(prompt)
+    report = generate_report(logs_text)
     update_db_reports(data, report, report_type="aggregated", company_id=company_id, talking_product_id=talking_product_id)
 
 

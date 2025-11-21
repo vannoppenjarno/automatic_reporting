@@ -1,14 +1,12 @@
 from langchain_core.output_parsers import PydanticOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
 from sklearn.metrics.pairwise import euclidean_distances
-from google.genai.errors import ServerError, ClientError
-import google.generativeai as genai
 from collections import Counter
-from string import Template
 from report import Report
-import os, json, time
 import numpy as np
 import tiktoken
-import re
+import os
 
 CONTEXT_PATH = os.getenv("CONTEXT_PATH")
 DAILY_PROMPT_TEMPLATE_PATH = os.getenv("DAILY_PROMPT_TEMPLATE_PATH")
@@ -188,56 +186,61 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
 
     return "\n".join(output_lines)
 
-def create_prompt(logs_text):
+def create_report_chain(model_name: str = MODEL):
     """
-    Create a consistent prompt using:
-        - clustered logs
-        - context
-        - a prompt template
-        - a pydantic output parser
+    Build a LangChain pipeline:
+        context + logs_text + format_instructions
+        -> ChatGoogleGenerativeAI
+        -> PydanticOutputParser(Report)
 
     Returns:
-        - prompt string
-        - pydantic output parser
+        chain: Runnable that takes {"logs_text": "..."} and returns a Report instance
     """
-    context = get_context()
-    template = get_daily_prompt_template()
-
-    # Pydantic parser & instructions
     parser = PydanticOutputParser(pydantic_object=Report)
-    format_instructions = parser.get_format_instructions()
-    
-    prompt = template.substitute(
-        context=context,
-        logs_text=logs_text,
-        format_instructions=format_instructions
-    )
-    return prompt, parser
+    template_str = get_daily_prompt_template()  # Prompt template – loaded from markdown file
+    prompt = ChatPromptTemplate.from_template(template_str)
 
-def generate_report(prompt, model=MODEL):
+    # Gemini LLM via LangChain
+    llm = ChatGoogleGenerativeAI(
+        model=model_name,
+        temperature=0,
+        max_retries=5,        # built-in retry for transient errors
+        google_api_key=LLM_API_KEY  # optional; uses env var by default
+    )
+
+    # 4) Build chain:
+    #    - supply context + logs_text + format_instructions as inputs
+    #    - prompt formats them
+    #    - LLM generates text
+    #    - parser turns it into Report
+    chain = (
+        {
+            "context": lambda _: get_context(),
+            "logs_text": lambda x: x["logs_text"],
+            "format_instructions": lambda _: parser.get_format_instructions(),
+        }
+        | prompt
+        | llm
+        | parser
+    )
+
+    return chain
+
+def generate_report(logs_text, model=MODEL):
     """
-    Generate a report based on a custom prompt using a local Ollama model.
+    Generate a structured Report from logs_text using:
+        - ChatGoogleGenerativeAI via LangChain
+        - ChatPromptTemplate loaded from file
+        - PydanticOutputParser(Report)
+
+    Returns:
+        Report instance (Pydantic model)
     """
-    last_error = None
-    for attempt in range(5):  # retry up to 5 times
-        try:
-            genai.configure(api_key=LLM_API_KEY)
-            model = genai.GenerativeModel(MODEL)
-            response = model.generate_content(prompt)
-            report_text = response.text.strip()
-            # Remove markdown code fences like ```json ... ```
-            report_text = re.sub(r"^```[a-zA-Z]*\n|```$", "", report_text).strip()
-            try:
-                report = json.loads(report_text)   # convert JSON string → dict
-            except json.JSONDecodeError:
-                report = {"raw_output": report_text}  # fallback if not valid JSON
-            return report
-        except ServerError as e:
-            last_error = e
-            print(f"[Attempt {attempt+1}] Gemini server overloaded, retrying in 10 s…")
-            time.sleep(10)
-        except ClientError as e:
-            # Client errors are not likely to be fixed by retrying
-            raise RuntimeError(f"Gemini client error: {e}")
-    # If we get here, all attempts failed
-    raise RuntimeError(f"Error after 5 attempts: {last_error}")
+    chain = create_report_chain(model_name=model)
+    # The chain expects an input dict with "logs_text" and internally fills context + format_instructions.
+    try:
+        report: Report = chain.invoke({"logs_text": logs_text})
+        return report
+    except Exception as e:
+        # Optional: if you want a manual fallback instead of hard failure, you can log e here and rethrow or return a minimal object.
+        raise RuntimeError(f"Failed to generate report: {e}")
