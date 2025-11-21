@@ -25,7 +25,6 @@ class ExecutiveSummaryItem(BaseModel):
     key_decision_needed: str
 
 class Report(BaseModel):
-    title: str
     topics: List[Topic]
     executive_summary: List[ExecutiveSummaryItem]
     overall_takeaway: str

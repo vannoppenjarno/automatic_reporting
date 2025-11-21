@@ -42,7 +42,7 @@ def main_aggregate(date_range, report_type, talking_product_id=None, company_id=
 
     clusters, noise = cluster_questions(data)
     logs_text = format_clusters_for_llm(data, clusters, noise)
-    prompt = create_prompt(logs_text, title=f"{report_type} Interaction Report")
+    prompt = create_prompt(logs_text)
     report = generate_report(prompt)
     update_db_reports(data, report, report_type=report_type, company_id=company_id, talking_product_id=talking_product_id)
 
@@ -55,7 +55,7 @@ def main_csv(csv_file, company_id, talking_product_id):
     logs_text = format_clusters_for_llm(data, clusters, noise)
     print(logs_text)  # For debugging
 
-    prompt = create_prompt(logs_text, title=f"Aggregated Interaction Report")
+    prompt = create_prompt(logs_text)
     report = generate_report(prompt)
     update_db_reports(data, report, report_type="aggregated", company_id=company_id, talking_product_id=talking_product_id)
 
