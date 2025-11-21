@@ -31,8 +31,7 @@ def get_daily_prompt_template():
     Load the daily prompt template from a markdown file.
     """
     with open(DAILY_PROMPT_TEMPLATE_PATH, "r", encoding="utf-8") as f:
-        template = Template(f.read())
-    return template
+        return f.read()
 
 def count_tokens(text: str, model: str = TOKEN_ENCODING_MODEL) -> int:
     """
