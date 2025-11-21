@@ -3,7 +3,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from sklearn.metrics.pairwise import euclidean_distances
 from collections import Counter
-from report import Report
+from .report import Report
 import numpy as np
 import tiktoken
 import os
@@ -95,11 +95,11 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
 
     # --- Load static prompt info ---
     context = get_context()
-    template = get_daily_prompt_template()
+    template_str = get_daily_prompt_template()
 
     # --- Count static tokens ---
     context_tokens = count_tokens(context)
-    prompt_tokens = count_tokens(template.template)
+    prompt_tokens = count_tokens(template_str)
     static_tokens = context_tokens + prompt_tokens  # Track total tokens used
 
     # --- Reserve dynamic space for clusters ---
@@ -226,7 +226,7 @@ def create_report_chain(model_name: str = MODEL):
 
     return chain
 
-def generate_report(logs_text, model=MODEL):
+def generate_report(logs_text: str, model=MODEL) -> Report:
     """
     Generate a structured Report from logs_text using:
         - ChatGoogleGenerativeAI via LangChain
