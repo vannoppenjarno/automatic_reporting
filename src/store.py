@@ -78,7 +78,7 @@ def update_db_interactions(data, talking_product_id=None):
     print(f"✅ Stored {len(data['logs'])} questions in Relational DB for {data['date']}")
     return
 
-def update_db_reports(data, report_text, report_type="Daily", company_id=None, talking_product_id=None, daterange=None):
+def update_db_reports(data, report, report_type="Daily", company_id=None, talking_product_id=None, daterange=None):
     """
     Save the generated daily report into the Relational database.
     data is the dict from parse_email()
@@ -92,7 +92,7 @@ def update_db_reports(data, report_text, report_type="Daily", company_id=None, t
         "average_match": data["average_match"],
         "complete_misses": data["complete_misses"],
         "complete_misses_rate": data["complete_misses_rate"],
-        "report_text": report_text,
+        "report_text": report.model_dump(),
         "talking_product_id": talking_product_id
     }
 
