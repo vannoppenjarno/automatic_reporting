@@ -8,7 +8,6 @@ import numpy as np
 import tiktoken
 import re
 
-REPORT_STRUCTURE_PATH = os.getenv("REPORT_STRUCTURE_PATH")
 CONTEXT_PATH = os.getenv("CONTEXT_PATH")
 DAILY_PROMPT_TEMPLATE_PATH = os.getenv("DAILY_PROMPT_TEMPLATE_PATH")
 MODEL = os.getenv("MODEL")
@@ -16,15 +15,6 @@ CONTEXT_WINDOW = int(os.getenv("CONTEXT_WINDOW"))
 TOKEN_ENCODING_MODEL = os.getenv("TOKEN_ENCODING_MODEL")
 MIN_TOKENS_PER_CLUSTER = int(os.getenv("MIN_TOKENS_PER_CLUSTER"))
 LLM_API_KEY = os.getenv("LLM_API_KEY")
-
-def get_report_structure(title="Automatic Interaction Report"):
-    """
-    Update the report structure template with new metadata values.
-    """
-    with open(REPORT_STRUCTURE_PATH, 'r') as file:
-        report_structure = json.load(file)
-    report_structure["title"] = title
-    return report_structure
 
 def get_context():
     """
@@ -105,15 +95,13 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
     scores = [log["match_score"] for log in logs]
 
     # --- Load static prompt info ---
-    report_structure = get_report_structure()
     context = get_context()
     template = get_daily_prompt_template()
 
     # --- Count static tokens ---
-    report_structure_tokens = count_tokens(json.dumps(report_structure, indent=2))
     context_tokens = count_tokens(context)
     prompt_tokens = count_tokens(template.template)
-    static_tokens = report_structure_tokens + context_tokens + prompt_tokens  # Track total tokens used
+    static_tokens = context_tokens + prompt_tokens  # Track total tokens used
 
     # --- Reserve dynamic space for clusters ---
     available_tokens = max_tokens - static_tokens
@@ -203,12 +191,10 @@ def create_prompt(logs_text, title="Daily Interaction Report"):
     """
     Create a consistent prompt for generating a daily report from parsed email data.
     """
-    report_structure = get_report_structure(title)
     context = get_context()
     template = get_daily_prompt_template()
     
     prompt = template.substitute(
-        json_template=json.dumps(report_structure, indent=2),
         context=context,
         logs_text=logs_text
     )
