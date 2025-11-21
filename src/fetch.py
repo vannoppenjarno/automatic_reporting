@@ -3,10 +3,12 @@ from simplegmail import Gmail
 from bs4 import BeautifulSoup
 from datetime import datetime
 import os, csv
+import langid
 
 # Access variables
 SUBJECT_PATTERN = os.getenv("SUBJECT_PATTERN")
 SENDER_PATTERN = os.getenv("SENDER_PATTERN")
+LANG_CONFIDENCE_THRESHOLD = float(os.getenv("LANG_CONFIDENCE_THRESHOLD"))  
 
 def filter_emails(email):
     """Filter emails based on subject and sender patterns."""
@@ -29,6 +31,19 @@ def fetch_emails():
     filtered_emails = [email for email in raw_emails if filter_emails(email)]
     sorted_emails = sort_by_date(filtered_emails)
     return sorted_emails
+
+def detect_language(text: str):
+    """
+    Detect language using langid.
+    Returns a 2-letter ISO code (e.g. 'nl', 'en', 'fr') or None if confidence is low.
+    """
+    if not text or not text.strip():
+        return None
+
+    lang, prob = langid.classify(text)
+    if prob < LANG_CONFIDENCE_THRESHOLD:
+        return None
+    return lang
 
 def parse_email(date, email_list):
     """Parse a list of emails for a specific date, extract Q&A logs and metrics, and store it in a data dictionary."""
@@ -59,7 +74,8 @@ def parse_email(date, email_list):
                 "answer": answer,
                 "match_score": match_score,
                 "date": date,
-                "time": time
+                "time": time,
+                "language": detect_language(question) 
             })
 
     n_logs = len(logs)
@@ -123,7 +139,8 @@ def parse_csv_logs(csv_path):
             "answer": answer,
             "match_score": match_score,
             "date": date,
-            "time": time
+            "time": time,
+            "language": detect_language(question)
         })
 
     n_logs = len(logs)
