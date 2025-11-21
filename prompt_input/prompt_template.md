@@ -6,7 +6,7 @@ Important:
 - Strictly follow the format instructions provided below.
 
 FORMAT INSTRUCTIONS:
-$format_instructions
+{format_instructions}
 
 General instructions:
 - Do NOT add any placeholder text like "Continue generating..." or "etc.".
@@ -15,15 +15,17 @@ General instructions:
 - Generate the executive_summary array automatically based on the statuses of all topics.
 - Do not skip or truncate this section even if there are many topics.
 
-Company Context:
-$context
+COMPANY CONTEXT:
+{context}
 
 Instructions for topics:
 - Generate a broad, descriptive topic label for each cluster, based on all questions in that cluster.
 - Suggest recommendations taking into account the company context above.
 - Try to have an alternative to the recommended action, considering cost efficiency, potential impact, and alignment with strategic objectives.
 - Recommendations should reflect insights from low scoring clusters, knowledge gaps, and frequency trends.
-- Be sure to take into account the pre-clustering! Pre-clustered logs: $logs_text
+
+CLUSTERED LOGS:
+{logs_text}
 
 Instructions for executive_summary:
 - Summarize key objectives and key decisions needed for management at a glance.
