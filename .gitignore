@@ -22,3 +22,6 @@ __pycache__/
 
 # ignore csv files
 *.csv
+
+# ignore txt files
+*.txt
