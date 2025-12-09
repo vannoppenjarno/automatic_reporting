@@ -92,10 +92,13 @@ def parse_email(date, email_list):
     
     return data
 
-def parse_csv_logs(csv_path):
+def parse_csv_logs(csv_path, min_date_exclusive=None):
     """
     Read Talking Product CSV logs and produce the same aggregated data structure
     as parse_email(), but allow multiple dates inside one CSV.
+
+    If min_date_exclusive is provided (datetime.date), any CSV rows whose date
+    is <= min_date_exclusive will be ignored.
     """
     complete_misses = 0
     accumulated_match = 0
@@ -116,8 +119,14 @@ def parse_csv_logs(csv_path):
         datetime_str = row["Date/Time"].strip()
         dt = datetime.strptime(datetime_str, "%d/%m/%Y, %H:%M:%S")
 
+        # Date used in DB: "YYYY-MM-DD"
         date = dt.strftime("%Y-%m-%d")
         time = dt.strftime("%H:%M:%S")
+
+        # Filter out already-processed dates: remove all rows with date <= latest date
+        if min_date_exclusive is not None:
+            if dt.date() <= min_date_exclusive:
+                continue  # skip this row entirely
 
         question = row["Statement"].strip()
         answer = row["Answer"].strip()
@@ -127,7 +136,6 @@ def parse_csv_logs(csv_path):
         except:
             print("SCORE PARSE ERROR:", raw_score, row)
             raise
-        # match_score = float(raw_score) if raw_score else 0.0
 
         if match_score == 0:
             complete_misses += 1
