@@ -13,6 +13,18 @@ This project automates the collection, analysis, and reporting of visitor intera
 * **Customizable Output:** Reports are additionally saved as Markdown files in `reports/` for easy inspection.
 * **Extensible & Modular:** Easily add new data sources, templates, or output options.
 
+### Vector Embedding Model
+TODO explain which embedding model is used and why and how to potentially improve
+
+### Clustering
+TODO explain how we cluster
+
+#### Importance Filtering
+TODO explain how we filter importance
+
+#### Token Budgeting
+TODO explain how we budget tokens
+
 ---
 
 ## Project Structure
