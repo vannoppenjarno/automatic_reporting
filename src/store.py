@@ -320,14 +320,15 @@ def get_latest_interaction_date(talking_product_id):
         .select("date")
         .eq("talking_product_id", talking_product_id)
         .order("date", desc=True)
-        .maybe_single()
+        .limit(1)
         .execute()
     )
 
-    if not res.data:
+    data = res.data 
+    if not data:
         return None
 
-    return res.data["date"]
+    return datetime.strptime(data[0]["date"], "%Y-%m-%d").date()
 
 
 
