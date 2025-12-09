@@ -310,6 +310,25 @@ def get_ids(talking_product_name: str):
     
     return res.data["id"], res.data["company_id"]
 
+def get_latest_interaction_date(talking_product_id):
+    """
+    Fetch latest interaction date for a given talking_product_id.
+    Returns a date object or None.
+    """
+    res = (
+        supabase.table("interactions")
+        .select("date")
+        .eq("talking_product_id", talking_product_id)
+        .order("date", desc=True)
+        .maybe_single()
+        .execute()
+    )
+
+    if not res.data:
+        return None
+
+    return res.data["date"]
+
 
 
 if __name__ == "__main__":
