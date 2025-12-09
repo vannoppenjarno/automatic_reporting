@@ -7,7 +7,7 @@ load_dotenv()  # Load environment variables from .env file
 
 from src.fetch import fetch_emails, parse_email, parse_csv_logs
 from src.prompt import generate_report, format_clusters_for_llm
-from src.store import update_db_interactions, update_db_reports, fetch_questions, get_active_company_ids, get_active_talking_product_ids, get_ids, get_company_id
+from src.store import update_db_interactions, update_db_reports, fetch_questions, get_active_company_ids, get_active_talking_product_ids, get_ids, get_company_id, get_latest_interaction_date
 from src.utils import add_question_embeddings, cluster_questions
 
 def main_daily(talking_product_id):
@@ -45,7 +45,14 @@ def main_aggregate(date_range, report_type, talking_product_id=None, company_id=
     update_db_reports(data, report, report_type=report_type, company_id=company_id, talking_product_id=talking_product_id)
 
 def main_csv(csv_file, company_id, talking_product_id):
-    data = parse_csv_logs(csv_file)
+    latest_date = get_latest_interaction_date(talking_product_id)  # Fetch latest processed date for this TP
+    data = parse_csv_logs(csv_file, min_date_exclusive=latest_date)
+
+    # If no new logs, just return (CSV was already fully processed)
+    if data["n_logs"] == 0:
+        print(f"No new data to process for talking_product_id={talking_product_id} from CSV {csv_file}.")
+        return
+    
     data = add_question_embeddings(data)
     update_db_interactions(data, talking_product_id)
 
