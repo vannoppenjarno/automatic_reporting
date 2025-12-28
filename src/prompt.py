@@ -244,3 +244,23 @@ def generate_report(logs_text: str, model=MODEL) -> Report:
     except Exception as e:
         # Optional: if you want a manual fallback instead of hard failure, you can log e here and rethrow or return a minimal object.
         raise RuntimeError(f"Failed to generate report: {e}")
+    
+RAG_PROMPT = """You are an analytics assistant for a company dashboard.
+Use ONLY the provided context. If the context is insufficient, say what is missing.
+
+Question:
+{question}
+
+Context:
+{context}
+
+Return:
+- A concise answer
+- Bullet points with evidence referencing [1], [2], ...
+"""
+
+rag_prompt = ChatPromptTemplate.from_template(RAG_PROMPT)
+
+def answer_with_rag(question: str, context: str, llm: ChatGoogleGenerativeAI):
+    chain = rag_prompt | llm
+    return chain.invoke({"question": question, "context": context})
