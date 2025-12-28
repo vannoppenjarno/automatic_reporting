@@ -137,7 +137,7 @@ def upsert_report_to_chroma(report,
     report_type: str,
     date: str,              
     date_range: tuple = None,
-    embed_fn=None               
+    embed_fn=embed               
 ):
     text = report_to_txt(report)
     chunks = chunk_text(text)
@@ -198,7 +198,7 @@ def update_db_reports(data, report, report_type="Daily", company_id=None, talkin
     except Exception as e:
         print(f"⚠️ Error saving report for {data['date']}: {e}")
         return
-    upsert_report_to_chroma(report, company_id, talking_product_id, report_type, data['date'], date_range,embed_fn=embed)
+    upsert_report_to_chroma(report, company_id, talking_product_id, report_type, data['date'], date_range)
     print(f"✅ Saved report for {data['date']}")
     return
 
