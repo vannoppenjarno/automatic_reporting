@@ -40,31 +40,6 @@ def report_chunk_id(talking_product_id: str, report_type: str, date_key: str, ch
     # date_key could be "2025-12-15" for daily or "2025-12-01_2025-12-31" for ranges
     return f"r_{talking_product_id}_{report_type}_{date_key}_c{chunk_idx:03d}"
 
-def upsert_interactions_to_chroma(data, company_id: str, talking_product_id: str):
-    for log in data["logs"]:
-        Q = log["question"]
-        A = log["answer"]
-        D = log["date"]
-        T = log["time"]
-        S = log["match_score"]
-        L = log["language"]
-        E = log["embedding"]
-
-        COLLECTION.upsert(
-            ids=[interaction_id(talking_product_id, D, T, Q)],
-            documents=[f"Q: {Q}\nA: {A}"],   # better than Q alone
-            metadatas=[{
-                "doc_type": "interaction",
-                "company_id": company_id,
-                "talking_product_id": talking_product_id,
-                "date": D,
-                "time": T,
-                "match_score": S,
-                "language": L
-            }],
-            embeddings=[E]
-        )
-
 def update_db_interactions(data, company_id=None, talking_product_id=None):
     """Insert interactions into Supabase and Chroma Cloud."""
     for log in data["logs"]:
@@ -92,7 +67,20 @@ def update_db_interactions(data, company_id=None, talking_product_id=None):
             print(f"⚠️ Duplicate or error: {Q[:30]}... {e}")
 
         # 2️⃣ Chroma Cloud (Vector DB)
-        upsert_interactions_to_chroma(data, company_id, talking_product_id)
+        COLLECTION.upsert(
+            ids=[interaction_id(talking_product_id, D, T, Q)],
+            documents=[f"Q: {Q}\nA: {A}"],   # better than Q alone
+            metadatas=[{
+                "doc_type": "interaction",
+                "company_id": company_id,
+                "talking_product_id": talking_product_id,
+                "date": D,
+                "time": T,
+                "match_score": S,
+                "language": L
+            }],
+            embeddings=[E]
+        )
         
     print(f"✅ Stored {len(data['logs'])} questions in both Relational and Vector DB for {data['date']}")
     return
