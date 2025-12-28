@@ -30,8 +30,7 @@ def main_daily(talking_product_id):
         update_db_reports(data, report, talking_product_id=talking_product_id)  # Save interactions + report in the SQLite database
 
 def main_aggregate(date_range, report_type, talking_product_id=None, company_id=None):
-    """Generate aggregated reports (Weekly, Monthly, or custom) for given date range and talking product names.
-    The talking product names should be from the same company."""
+    """Generate aggregated reports (Weekly, Monthly, or custom) for a given date range, talking product id and company id. The talking product id should correspond to the correct company id."""
     # Fetch questions for the given date range
     data = fetch_questions(date_range, talking_product_id=talking_product_id, company_id=company_id)
 
