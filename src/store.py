@@ -31,9 +31,9 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # else:
 #     raise RuntimeError("Failed to connect to Chroma Cloud after 3 retries.")
 
-def stable_id(date: str, time: str, question: str) -> str:
+def interaction_id(talking_product_id: str, date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
-    return f"{date}_{time}_{q_hash}"
+    return f"i_{talking_product_id}_{date}_{time}_{q_hash}"
 
 def update_db_interactions(data, talking_product_id=None):
     """Insert interactions into Supabase and Chroma Cloud."""
