@@ -10,7 +10,7 @@ from src.prompt import generate_report, format_clusters_for_llm
 from src.store import update_db_interactions, update_db_reports, fetch_questions, get_active_company_ids, get_active_talking_product_ids, get_ids, get_company_id, get_latest_interaction_date
 from src.utils import add_question_embeddings, cluster_questions
 
-def main_daily(talking_product_id):
+def main_daily(company_id, talking_product_id):
     emails = fetch_emails()  # TODO has to change in the future based in the company_id and talking_product_id
     if not emails:
         print("No new emails found.")
@@ -19,7 +19,7 @@ def main_daily(talking_product_id):
     for date, email_list in emails.items():
         data = parse_email(date, email_list)
         data = add_question_embeddings(data)  # Embed questions in the data
-        update_db_interactions(data, talking_product_id)  # Store interactions in both the relational and vector DB
+        update_db_interactions(data, company_id, talking_product_id)  # Store interactions in both the relational and vector DB
 
         clusters, noise = cluster_questions(data)  # Cluster questions based on embeddings
         logs_text = format_clusters_for_llm(data, clusters, noise)
@@ -53,7 +53,7 @@ def main_csv(csv_file, company_id, talking_product_id):
         return
     
     data = add_question_embeddings(data)
-    update_db_interactions(data, talking_product_id)
+    update_db_interactions(data, company_id, talking_product_id)
 
     clusters, noise = cluster_questions(data)
     logs_text = format_clusters_for_llm(data, clusters, noise)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     for company_id in active_company_ids:
         active_talking_product_ids = get_active_talking_product_ids(company_id)
         for talking_product_id in active_talking_product_ids:
-            main_daily(talking_product_id)
+            main_daily(company_id, talking_product_id)
 
             # 1.1. Weekly aggregation
             if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
