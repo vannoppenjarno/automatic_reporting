@@ -282,3 +282,4 @@ def ask(req: AskRequest):
         "citations": citations
     }
 
+# Critical rule: the frontend must never hold the LLM key. Frontend calls /ask, backend calls Gemini/OpenAI.
