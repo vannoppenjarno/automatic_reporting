@@ -79,8 +79,7 @@ def update_db_interactions(data, talking_product_id=None):
             embeddings=[E]
             )
         
-    # print(f"✅ Stored {len(data['logs'])} questions in both Relational and Vector DB for {data['date']}")
-    print(f"✅ Stored {len(data['logs'])} questions in Relational DB for {data['date']}")
+    print(f"✅ Stored {len(data['logs'])} questions in both Relational and Vector DB for {data['date']}")
     return
 
 def update_db_reports(data, report, report_type="Daily", company_id=None, talking_product_id=None, daterange=None):
