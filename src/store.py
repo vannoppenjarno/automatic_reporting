@@ -155,7 +155,7 @@ def upsert_report_to_chroma(report,
             "company_id": company_id,
             "talking_product_id": talking_product_id,
             "report_type": report_type,
-            "date_key": date,
+            "date": date,
             "date_range": date_range
         })
         if embed_fn:
@@ -421,6 +421,42 @@ def get_latest_interaction_date(talking_product_id):
         return None
 
     return datetime.strptime(data[0]["date"], "%Y-%m-%d").date()
+
+def retrieve_context(query: str, company_id: str, talking_product_id: str | None, embed_fn, k: int = 8, date=None, start_date=None, end_date=None):
+    q_emb = embed_fn(query)
+
+    where = {"company_id": company_id}
+    if talking_product_id is not None:
+        where["talking_product_id"] = talking_product_id
+    
+    if date is not None:
+        where["date"] = date
+
+    if start_date is not None and end_date is not None:
+        where["date"] = {"$gte": start_date, "$lte": end_date}
+
+    res = COLLECTION.query(
+        query_embeddings=[q_emb],
+        n_results=k,
+        where=where,
+        include=["documents", "metadatas", "distances"]
+    )
+
+    docs = res["documents"][0]
+    metas = res["metadatas"][0]
+    dists = res.get("distances", [[None]*len(docs)])[0]
+
+    # Build compact context + citations
+    context_blocks = []
+    citations = []
+    for i, (doc, meta, dist) in enumerate(zip(docs, metas, dists), start=1):
+        tag = meta.get("doc_type", "doc")
+        tp = meta.get("talking_product_id", "")
+        rk = meta.get("date_key") or meta.get("date")
+        context_blocks.append(f"[{i}] ({tag}, tp={tp}, date={rk})\n{doc}")
+        citations.append({"i": i, "meta": meta, "distance": dist})
+
+    return "\n\n".join(context_blocks), citations
 
 
 
