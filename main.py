@@ -41,7 +41,7 @@ def main_aggregate(date_range, report_type, talking_product_id=None, company_id=
     clusters, noise = cluster_questions(data)
     logs_text = format_clusters_for_llm(data, clusters, noise)
     report = generate_report(logs_text)
-    update_db_reports(data, report, report_type=report_type, company_id=company_id, talking_product_id=talking_product_id)
+    update_db_reports(data, report, report_type, company_id, talking_product_id, date_range)
 
 def main_csv(csv_file, company_id, talking_product_id):
     latest_date = get_latest_interaction_date(talking_product_id)  # Fetch latest processed date for this TP
