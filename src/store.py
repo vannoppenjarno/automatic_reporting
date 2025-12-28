@@ -82,6 +82,31 @@ def update_db_interactions(data, talking_product_id=None):
     print(f"✅ Stored {len(data['logs'])} questions in both Relational and Vector DB for {data['date']}")
     return
 
+def report_to_txt(report) -> str:
+    r = report.model_dump()
+    lines = []
+    lines.append("OVERALL TAKEAWAY:")
+    lines.append(r.get("overall_takeaway", ""))
+    lines.append("\nEXECUTIVE SUMMARY:")
+    for item in r.get("executive_summary", []):
+        lines.append(f"- Objective: {item.get('objective')}")
+        lines.append(f"  Status: {item.get('status')}")
+        lines.append(f"  Key decision needed: {item.get('key_decision_needed')}")
+    lines.append("\nTOPICS:")
+    for t in r.get("topics", []):
+        lines.append(f"\nTopic: {t.get('topic')}")
+        lines.append(f"Observation: {t.get('observation')}")
+        lines.append(f"Implication: {t.get('implication')}")
+        sa = t.get("strategic_alignment", {})
+        rec = t.get("recommendation", {})
+        lines.append(f"Strategic alignment: {sa.get('objective')} | {sa.get('status')}")
+        lines.append(f"Recommendation: {rec.get('priority')} | {rec.get('action')}")
+        if rec.get("alternative"):
+            lines.append(f"Alternative: {rec.get('alternative')}")
+        lines.append(f"Impact: {rec.get('impact')}")
+        lines.append(f"Decision required: {t.get('decision_required')}")
+    return "\n".join(lines)
+
 def update_db_reports(data, report, report_type="Daily", company_id=None, talking_product_id=None, daterange=None):
     """
     Save the generated daily report into the Relational database.
