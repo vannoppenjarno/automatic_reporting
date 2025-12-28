@@ -1,7 +1,7 @@
 from supabase import create_client
 from dotenv import load_dotenv 
 from datetime import datetime
-# import chromadb, time
+import chromadb, time
 import hashlib
 import os
 
@@ -11,25 +11,25 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# CHROMA_KEY = os.getenv("CHROMA_KEY")
-# CHROMA_TENANT = os.getenv("CHROMA_TENANT")
-# CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
-# CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME")
+CHROMA_KEY = os.getenv("CHROMA_KEY")
+CHROMA_TENANT = os.getenv("CHROMA_TENANT")
+CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
+CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME")
 
-# for attempt in range(3):
-#     try:
-#         client = chromadb.CloudClient(
-#         api_key=CHROMA_KEY,
-#         tenant=CHROMA_TENANT,
-#         database=CHROMA_DATABASE
-#         )
-#         COLLECTION = client.get_or_create_collection(name=CHROMA_COLLECTION_NAME)
-#         break
-#     except Exception as e:
-#         print(f"Connection attempt {attempt+1} failed: {e}")
-#         time.sleep(3)
-# else:
-#     raise RuntimeError("Failed to connect to Chroma Cloud after 3 retries.")
+for attempt in range(3):
+    try:
+        client = chromadb.CloudClient(
+        api_key=CHROMA_KEY,
+        tenant=CHROMA_TENANT,
+        database=CHROMA_DATABASE
+        )
+        COLLECTION = client.get_or_create_collection(name=CHROMA_COLLECTION_NAME)
+        break
+    except Exception as e:
+        print(f"Connection attempt {attempt+1} failed: {e}")
+        time.sleep(3)
+else:
+    raise RuntimeError("Failed to connect to Chroma Cloud after 3 retries.")
 
 def interaction_id(talking_product_id: str, date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
@@ -62,17 +62,17 @@ def update_db_interactions(data, talking_product_id=None):
             print(f"⚠️ Duplicate or error: {Q[:30]}... {e}")
 
         # 2️⃣ Chroma Cloud (Vector DB)
-        # COLLECTION.add(
-        #     documents=[Q],
-        #     metadatas=[{
-        #         "answer": A,
-        #         "match_score": S,
-        #         "date": D,
-        #         "time": T
-        #     }],
-        #     ids=[stable_id(D, T, Q)],
-        #     embeddings=[E]
-        #     )
+        COLLECTION.add(
+            documents=[Q],
+            metadatas=[{
+                "answer": A,
+                "match_score": S,
+                "date": D,
+                "time": T
+            }],
+            ids=[interaction_id(D, T, Q)],
+            embeddings=[E]
+            )
         
     # print(f"✅ Stored {len(data['logs'])} questions in both Relational and Vector DB for {data['date']}")
     print(f"✅ Stored {len(data['logs'])} questions in Relational DB for {data['date']}")
