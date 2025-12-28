@@ -69,12 +69,13 @@ def update_db_interactions(data, talking_product_id=None):
         COLLECTION.add(
             documents=[Q],
             metadatas=[{
+                "date": D,
+                "time": T,
                 "answer": A,
                 "match_score": S,
-                "date": D,
-                "time": T
+                "talking_product_id": talking_product_id
             }],
-            ids=[interaction_id(D, T, Q)],
+            ids=[interaction_id(talking_product_id, D, T, Q)],
             embeddings=[E]
             )
         
