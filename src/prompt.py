@@ -2,7 +2,10 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from sklearn.metrics.pairwise import euclidean_distances
+from .store import retrieve_context
 from collections import Counter
+from pydantic import BaseModel
+from fastapi import FastAPI
 from .report import Report
 import numpy as np
 import tiktoken
@@ -245,22 +248,37 @@ def generate_report(logs_text: str, model=MODEL) -> Report:
         # Optional: if you want a manual fallback instead of hard failure, you can log e here and rethrow or return a minimal object.
         raise RuntimeError(f"Failed to generate report: {e}")
     
-RAG_PROMPT = """You are an analytics assistant for a company dashboard.
-Use ONLY the provided context. If the context is insufficient, say what is missing.
-
-Question:
-{question}
-
-Context:
-{context}
-
-Return:
-- A concise answer
-- Bullet points with evidence referencing [1], [2], ...
-"""
-
-rag_prompt = ChatPromptTemplate.from_template(RAG_PROMPT)
-
+def get_rag_prompt():
+    """
+    Load RAG prompt template from file.
+    """
+    with open("src/prompt_input/rag_prompt.md", "r", encoding="utf-8") as f:
+        return f.read()
+    
 def answer_with_rag(question: str, context: str, llm: ChatGoogleGenerativeAI):
+    rag_prompt = ChatPromptTemplate.from_template(get_rag_prompt())
     chain = rag_prompt | llm
     return chain.invoke({"question": question, "context": context})
+
+app = FastAPI()
+
+class AskRequest(BaseModel):
+    company_id: str
+    talking_product_id: str | None = None
+    question: str
+
+@app.post("/ask")
+def ask(req: AskRequest):
+    context, citations = retrieve_context(
+        query=req.question,
+        company_id=req.company_id,
+        talking_product_id=req.talking_product_id,
+        k=10
+    )
+    llm = ChatGoogleGenerativeAI(model=MODEL, temperature=0, google_api_key=LLM_API_KEY)
+    resp = answer_with_rag(req.question, context, llm)
+    return {
+        "answer": resp.content if hasattr(resp, "content") else str(resp),
+        "citations": citations
+    }
+
