@@ -435,6 +435,8 @@ def retrieve_context(query: str, company_id: str, talking_product_id: str | None
     if start_date is not None and end_date is not None:
         where["date"] = {"$gte": start_date, "$lte": end_date}
 
+    # TODO: filter by report_type if needed and by doc_type!!!
+
     res = COLLECTION.query(
         query_embeddings=[q_emb],
         n_results=k,
