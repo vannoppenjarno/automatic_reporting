@@ -35,6 +35,10 @@ def interaction_id(talking_product_id: str, date: str, time: str, question: str)
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
     return f"i_{talking_product_id}_{date}_{time}_{q_hash}"
 
+def report_chunk_id(talking_product_id: str, report_type: str, date_key: str, chunk_idx: int) -> str:
+    # date_key could be "2025-12-15" for daily or "2025-12-01_2025-12-31" for ranges
+    return f"r_{talking_product_id}_{report_type}_{date_key}_c{chunk_idx:03d}"
+
 def update_db_interactions(data, talking_product_id=None):
     """Insert interactions into Supabase and Chroma Cloud."""
     for log in data["logs"]:
