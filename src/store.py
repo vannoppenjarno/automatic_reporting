@@ -107,6 +107,16 @@ def report_to_txt(report) -> str:
         lines.append(f"Decision required: {t.get('decision_required')}")
     return "\n".join(lines)
 
+def chunk_text(text: str, chunk_size: int = 900, overlap: int = 150):
+    text = text.strip()
+    chunks = []
+    i = 0
+    while i < len(text):
+        j = min(len(text), i + chunk_size)
+        chunks.append(text[i:j])
+        i = max(i + chunk_size - overlap, j)
+    return [c.strip() for c in chunks if c.strip()]
+
 def update_db_reports(data, report, report_type="Daily", company_id=None, talking_product_id=None, daterange=None):
     """
     Save the generated daily report into the Relational database.
