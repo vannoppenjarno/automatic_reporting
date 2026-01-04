@@ -5,33 +5,20 @@ from typing import List, Literal, Optional
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from pydantic import BaseModel
-from supabase import create_client
 
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
 from src.prompt import answer_with_rag
-from src.store import retrieve_context
-from config import RETRIEVAL_K
+from src.get.data import retrieve_context
+from config import SUPABASE, RETRIEVAL_K, REPORT_TABLES
 
 # ----------------- Setup -----------------
 
 load_dotenv()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 app = FastAPI(title="Digiole Backend")
 
-REPORT_TABLES = {
-    "daily": "Daily",
-    "weekly": "Weekly",
-    "monthly": "Monthly",
-    "aggregated": "aggregated",
-}
 
 # ----------------- Pydantic models -----------------
 
@@ -86,45 +73,30 @@ def verify_google_token(id_token_str: str) -> dict:
     return idinfo
 
 
-def get_or_load_user(google_sub: str, email: str) -> User:
-    """
-    Load the user linked to this Google account.
-    If no user/tenant is configured, block access.
-    """
+def get_or_create_user(google_sub: str, email: str):
     res = (
-        supabase.table("users")
-        .select("id,email,company_id")
+        SUPABASE.table("users")
+        .select("*")
         .eq("google_sub", google_sub)
         .limit(1)
         .execute()
     )
-    rows = res.data or []
 
-    if not rows:
-        # Option A: auto-create user without company and block
-        # Option B: just block until manually linked in admin
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not linked to any company",
-        )
+    if res.data:
+        return res.data[0]
 
-    row = rows[0]
-    if not row.get("company_id"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User has no company assigned",
-        )
+    # create new user without company_id
+    new_user = {
+        "email": email,
+        "google_sub": google_sub,
+        "company_id": None
+    }
 
-    return User(
-        id=row["id"],
-        email=row["email"],
-        company_id=row["company_id"],
-    )
+    created = SUPABASE.table("users").insert(new_user).execute()
+    return created.data[0]
 
 
-async def get_current_user(
-    authorization: str = Header(..., description="Bearer <google_id_token>"),
-) -> User:
+async def get_current_user(authorization: str = Header(..., description="Bearer <google_id_token>")) -> User:
     """
     FastAPI dependency:
     - Reads Google ID token from Authorization header
@@ -142,7 +114,10 @@ async def get_current_user(
     google_sub = idinfo["sub"]
     email = idinfo.get("email", "")
 
-    user = get_or_load_user(google_sub, email)
+    user = get_or_create_user(google_sub, email)
+    if not user["company_id"]:
+        raise HTTPException(403, "User not linked to a company yet")
+    
     return user
 
 
@@ -150,7 +125,7 @@ async def get_current_user(
 
 def ensure_product_belongs_to_company(talking_product_id: str, company_id: str):
     res = (
-        supabase.table("talking_products")
+        SUPABASE.table("talking_products")
         .select("id")
         .eq("id", talking_product_id)
         .eq("company_id", company_id)
@@ -174,7 +149,7 @@ def ensure_product_belongs_to_company(talking_product_id: str, company_id: str):
 )
 def list_my_talking_products(current_user: User = Depends(get_current_user)):
     res = (
-        supabase.table("talking_products")
+        SUPABASE.table("talking_products")
         .select("id,name,company_id,active")
         .eq("company_id", current_user.company_id)
         .eq("active", True)
@@ -205,7 +180,7 @@ def get_report(
         ensure_product_belongs_to_company(talking_product_id, current_user.company_id)
 
         res = (
-            supabase.table(table)
+            SUPABASE.table(table)
             .select("report")
             .eq("talking_product_id", talking_product_id)
             .eq("date", report_date.isoformat())
@@ -216,7 +191,7 @@ def get_report(
     else:  # aggregated
         # aggregated already has company_id + talking_product_id
         query = (
-            supabase.table(table)
+            SUPABASE.table(table)
             .select("report")
             .eq("company_id", current_user.company_id)
             .eq("date", report_date.isoformat())
@@ -235,7 +210,6 @@ def get_report(
 
 
 # ----------------- RAG Q&A endpoint (tenant-safe) -----------------
-
 
 @app.post(
     "/ask",
