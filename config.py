@@ -19,7 +19,7 @@ CHROMA_DATABASE = 'Test'
 
 # ---------- Models ----------
 LLM_MODEL = "models/gemini-2.5-flash"
-EMBEDDING_MODEL = "BAAI/bge-m3"
+EMBED_MODEL = "BAAI/bge-m3"
 TOKEN_ENCODING_MODEL = "cl100k_base"
 
 
