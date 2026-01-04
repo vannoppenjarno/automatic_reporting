@@ -5,7 +5,7 @@ from collections import Counter
 from sklearn.metrics.pairwise import euclidean_distances
 
 from config import TOKEN_ENCODING_MODEL, CONTEXT_WINDOW, MIN_TOKENS_PER_CLUSTER
-from get.templates import get_daily_prompt_template, get_context
+from .get.templates import get_daily_prompt_template, get_context
 
 def cluster_questions(data, min_cluster_size=2):
     """

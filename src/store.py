@@ -7,7 +7,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter, MarkdownHea
 from langchain_core.documents import Document
 
 from config import SUPABASE, COLLECTION, CHUNK_SIZE, CHUNK_OVERLAP
-from src.get.data import get_company_id
+from .get.data import get_company_id
 
 def interaction_id(talking_product_id: str, date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
