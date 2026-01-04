@@ -1,3 +1,11 @@
+from supabase import create_client
+from dotenv import load_dotenv
+import os, chromadb, time
+
+
+load_dotenv()
+
+
 # ########## Configuration Settings ##########
 CONTEXT_WINDOW = 1000000
 MIN_TOKENS_PER_CLUSTER = 200
@@ -14,8 +22,6 @@ CHUNK_OVERLAP = 200
 # ---------- Namings ----------
 SUBJECT_PATTERN = "jarno"
 SENDER_PATTERN = "mail@i.no-reply-messages.com"
-CHROMA_COLLECTION_NAME = "digiole_automatic_reporting"
-CHROMA_DATABASE = 'Test'
 
 
 # ---------- Models ----------
@@ -27,6 +33,7 @@ TOKEN_ENCODING_MODEL = "cl100k_base"
 # ---------- File paths ----------
 CSV_LOGS_DIR = "C:/Users/jarno/Desktop/Digiole/code/automatic_reporting/csv_logs"
 DAILY_PROMPT_TEMPLATE_PATH = "prompt_input/prompt_template.md"
+RAG_PROMPT_TEMPLATE_PATH = "prompt_input/rag_prompt.md"
 REPORT_STRUCTURE_PATH = "prompt_input/report_structure.json"
 CONTEXT_PATH = "prompt_input/context.md"
 
@@ -43,3 +50,31 @@ TALKING_PRODUCT_QR_CODES = ""
 MANUAL_AGGREGATION_ENABLED = "false"
 MANUAL_AGGREGATION_DATE_RANGE = ""
 MANUAL_AGGREGATION_COMPANY_NAME = ""
+
+
+# ---------- Supabase Settings ----------
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+# ---------- Chroma Cloud Settings ----------
+CHROMA_DATABASE = 'Test'
+CHROMA_COLLECTION_NAME = "digiole_automatic_reporting"
+CHROMA_KEY = os.getenv("CHROMA_KEY")
+CHROMA_TENANT = os.getenv("CHROMA_TENANT")
+
+for attempt in range(3):
+    try:
+        client = chromadb.CloudClient(
+        api_key=CHROMA_KEY,
+        tenant=CHROMA_TENANT,
+        database=CHROMA_DATABASE
+        )
+        COLLECTION = client.get_or_create_collection(name=CHROMA_COLLECTION_NAME)
+        break
+    except Exception as e:
+        print(f"Connection attempt {attempt+1} failed: {e}")
+        time.sleep(3)
+else:
+    raise RuntimeError("Failed to connect to Chroma Cloud after 3 retries.")

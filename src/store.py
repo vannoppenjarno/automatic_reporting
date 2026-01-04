@@ -1,36 +1,13 @@
 from .embed import embed
-from supabase import create_client
-from datetime import datetime
-import chromadb, time, hashlib, os
+import hashlib, os
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 from json2markdown import convert_json_to_markdown_document as json2md
 from langchain_text_splitters import RecursiveCharacterTextSplitter, MarkdownHeaderTextSplitter
 from langchain_core.documents import Document
 
-from config import CHROMA_DATABASE, CHROMA_COLLECTION_NAME, CHUNK_SIZE, CHUNK_OVERLAP
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-CHROMA_KEY = os.getenv("CHROMA_KEY")
-CHROMA_TENANT = os.getenv("CHROMA_TENANT")
-
-for attempt in range(3):
-    try:
-        client = chromadb.CloudClient(
-        api_key=CHROMA_KEY,
-        tenant=CHROMA_TENANT,
-        database=CHROMA_DATABASE
-        )
-        COLLECTION = client.get_or_create_collection(name=CHROMA_COLLECTION_NAME)
-        break
-    except Exception as e:
-        print(f"Connection attempt {attempt+1} failed: {e}")
-        time.sleep(3)
-else:
-    raise RuntimeError("Failed to connect to Chroma Cloud after 3 retries.")
+from config import SUPABASE, COLLECTION, CHUNK_SIZE, CHUNK_OVERLAP
+from src.get.data import get_company_id
 
 def interaction_id(talking_product_id: str, date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
@@ -53,7 +30,7 @@ def update_db_interactions(data, company_id=None, talking_product_id=None):
 
         # 1️⃣ Supabase insert (Relational DB)
         try:
-            supabase.table("interactions").insert({
+            SUPABASE.table("interactions").insert({
                 "date": D,
                 "time": T,
                 "question": Q,
@@ -185,7 +162,7 @@ def update_db_reports(data, report, report_type="Daily", company_id=None, talkin
 
     # Insert or replace the report
     try:
-        supabase.table(report_type).upsert(payload).execute()
+        SUPABASE.table(report_type).upsert(payload).execute()
     except Exception as e:
         print(f"⚠️ Error saving report for {data['date']}: {e}")
         return
@@ -193,148 +170,14 @@ def update_db_reports(data, report, report_type="Daily", company_id=None, talkin
     print(f"✅ Saved report for {data['date']}")
     return
 
-def fetch_questions(date_range, talking_product_id=None, company_id=None):
-    """
-    Fetch questions (and compute summary statistics) from Supabase within optional date range based on:
-    1) talking_product_id (if provided)
-    2) otherwise company_id (fetch all products under company)
-
-    Returns a dict identical in structure to parse_email() output:
-    {
-        "date": "<start_date>",
-        "n_logs": int,
-        "average_match": float,
-        "complete_misses": int,
-        "complete_misses_rate": float,
-        "logs": [ {question, answer, match_score, time, embedding}, ... ]
-    }
-    """
-    # Determine date bounds
-    if date_range:
-        start_date, end_date = date_range
-        if hasattr(start_date, "isoformat"): start_date = start_date.isoformat()
-        if hasattr(end_date, "isoformat"): end_date = end_date.isoformat()
-    else:
-        start_date, end_date = None, None
-
-    params = {
-        "_talking_product_id": talking_product_id,
-        "_company_id": company_id,
-        "_start_date": start_date,
-        "_end_date": end_date
-    }
-    # Call RPC
-    try:
-        rows = rpc_paginate("fetch_interactions_filtered", params, batch_size=1000)
-        logs, accumulated_match, complete_misses = [], 0.0, 0
-
-        for r in rows:
-            s = float(r.get("match_score", 0))
-
-            logs.append({
-                "question": r["question"],
-                "answer": r["answer"],
-                "match_score": s,
-                "date": r["date"],
-                "time": r["interaction_time"],
-                "embedding": r.get("embedding")
-            })
-
-            accumulated_match += s
-            if s == 0:
-                complete_misses += 1
-
-        n_logs = len(logs)
-        avg_match = round(accumulated_match / n_logs, 2) if n_logs > 0 else 0
-        complete_misses_rate = round((complete_misses / n_logs) * 100, 2) if n_logs > 0 else 0
-
-        if start_date is None:
-            start_date = datetime.today().date().isoformat()  # Save generation date if no range provided
-            end_date = start_date
-
-        data = {
-            "date": start_date,
-            "n_logs": n_logs,
-            "average_match": avg_match,
-            "complete_misses": complete_misses,
-            "complete_misses_rate": complete_misses_rate,
-            "logs": logs
-        }
-
-        print(
-            f"✅ {n_logs} logs | Product={talking_product_id} | Company={company_id} "
-            f"| Range: {start_date} → {end_date} | Avg: {avg_match}% | Misses: {complete_misses}"
-        )
-        return data
-
-    except Exception as e:
-        print(f"⚠️ Error fetching questions from {start_date} → {end_date}: {e}")
-        return {
-            "date": start_date,
-            "n_logs": 0,
-            "average_match": 0,
-            "complete_misses": 0,
-            "complete_misses_rate": 0,
-            "logs": []
-        }
-
-def rpc_paginate(rpc_name, params, batch_size=1000):
-    all_rows = []
-    offset = 0
-
-    while True:
-        chunk_params = params.copy()
-        chunk_params["_limit"] = batch_size
-        chunk_params["_offset"] = offset
-
-        res = supabase.rpc(rpc_name, chunk_params).execute()
-        data = res.data or []
-
-        if not data:
-            break
-
-        all_rows.extend(data)
-        offset += batch_size
-
-        if len(data) < batch_size:
-            break
-
-    return all_rows
-
 def add_company(name: str):
     """Add a company name and return its id."""
     ins = (
-        supabase.table("companies")
+        SUPABASE.table("companies")
         .insert({"name": name})
         .execute()
     )
     return ins.data[0]["id"]
-
-def get_active_company_ids():
-    """
-    Fetch all active company IDs from the companies table.
-    Returns a list of company IDs.
-    """
-    res = (
-        supabase.table("companies")
-        .select("id")
-        .eq("active", True)
-        .execute()
-    )
-
-    rows = res.data or []
-    return [r["id"] for r in rows]
-
-def get_company_id(name: str):
-    """Fetch company id by name, return None if not found."""
-    res = (
-        supabase.table("companies")
-        .select("id")
-        .eq("name", name)
-        .maybe_single()
-        .execute()
-    )
-    return res.data["id"] if res.data else None
 
 def add_talking_product(company_name: str, product_name: str, admin_url=None, url=None, qr_code=None):
     """Insert a talking product by company name, fetch company id first."""
@@ -352,104 +195,12 @@ def add_talking_product(company_name: str, product_name: str, admin_url=None, ur
 
     # 3) Insert talking product (ignore if exists)
     ins = (
-        supabase.table("talking_products")
+        SUPABASE.table("talking_products")
         .insert(payload)
         .execute()
     )
 
     return ins.data[0]["id"]
-
-def get_active_talking_product_ids(company_id: str):
-    """
-    Fetch all active talking products for a given company_id.
-    Returns a list of talking product IDs.
-    """
-    res = (
-        supabase.table("talking_products")
-        .select("id")
-        .eq("company_id", company_id)
-        .eq("active", True)
-        .execute()
-    )
-
-    rows = res.data or []
-    return [r["id"] for r in rows]
-
-def get_ids(talking_product_name: str):
-    """
-    Return (talking_product_id, company_id) for a given talking_product_name.
-    Returns (None, None) if not found.
-    """
-    res = (
-        supabase.table("talking_products")
-        .select("id, company_id")
-        .eq("name", talking_product_name)
-        .maybe_single()
-        .execute()
-    )
-
-    if not res.data:
-        return None, None
-    
-    return res.data["id"], res.data["company_id"]
-
-def get_latest_interaction_date(talking_product_id):
-    """
-    Fetch latest interaction date for a given talking_product_id.
-    Returns a date object or None.
-    """
-    res = (
-        supabase.table("interactions")
-        .select("date")
-        .eq("talking_product_id", talking_product_id)
-        .order("date", desc=True)
-        .limit(1)
-        .execute()
-    )
-
-    data = res.data 
-    if not data:
-        return None
-
-    return datetime.strptime(data[0]["date"], "%Y-%m-%d").date()
-
-def retrieve_context(query: str, company_id: str, talking_product_id: str | None, embed_fn = embed, k: int = 8, date=None, start_date=None, end_date=None):
-    q_emb = embed_fn(query)
-
-    where = {"company_id": company_id}
-    if talking_product_id is not None:
-        where["talking_product_id"] = talking_product_id
-    
-    if date is not None:
-        where["date"] = date
-
-    if start_date is not None and end_date is not None:
-        where["date"] = {"$gte": start_date, "$lte": end_date}
-
-    # TODO: filter by report_type if needed and by doc_type!!!
-
-    res = COLLECTION.query(
-        query_embeddings=[q_emb],
-        n_results=k,
-        where=where,
-        include=["documents", "metadatas", "distances"]
-    )
-
-    docs = res["documents"][0]
-    metas = res["metadatas"][0]
-    dists = res.get("distances", [[None]*len(docs)])[0]
-
-    # Build compact context + citations
-    context_blocks = []
-    citations = []
-    for i, (doc, meta, dist) in enumerate(zip(docs, metas, dists), start=1):
-        tag = meta.get("doc_type", "doc")
-        tp = meta.get("talking_product_id", "")
-        rk = meta.get("date_key") or meta.get("date")
-        context_blocks.append(f"[{i}] ({tag}, tp={tp}, date={rk})\n{doc}")
-        citations.append({"i": i, "meta": meta, "distance": dist})
-
-    return "\n\n".join(context_blocks), citations
 
 
 

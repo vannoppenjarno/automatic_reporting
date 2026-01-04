@@ -1,4 +1,4 @@
-from .models import get_embedding_function
+from get.models import get_embedding_function
 
 def embed(text):
     embed_fn = get_embedding_function()
