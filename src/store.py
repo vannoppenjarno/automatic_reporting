@@ -1,6 +1,5 @@
 from .utils import embed
 from supabase import create_client
-from dotenv import load_dotenv 
 from datetime import datetime
 import chromadb, time
 import hashlib
@@ -9,7 +8,7 @@ import os
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
-load_dotenv()  
+from config import CHROMA_DATABASE, CHROMA_COLLECTION_NAME, CHUNK_SIZE, CHUNK_OVERLAP
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -17,11 +16,6 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 CHROMA_KEY = os.getenv("CHROMA_KEY")
 CHROMA_TENANT = os.getenv("CHROMA_TENANT")
-CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
-CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME")
-
-CHUNK_SIZE = 1000
-CHUNK_OVERLAP = 200
 
 for attempt in range(3):
     try:

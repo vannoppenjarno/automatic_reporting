@@ -2,13 +2,9 @@ from collections import defaultdict
 from simplegmail import Gmail
 from bs4 import BeautifulSoup
 from datetime import datetime
-import os, csv
-import langid
+import csv, langid
 
-# Access variables
-SUBJECT_PATTERN = os.getenv("SUBJECT_PATTERN")
-SENDER_PATTERN = os.getenv("SENDER_PATTERN")
-LANG_CONFIDENCE_THRESHOLD = float(os.getenv("LANG_CONFIDENCE_THRESHOLD"))  
+from config import SUBJECT_PATTERN, SENDER_PATTERN, LANG_CONFIDENCE_THRESHOLD
 
 def filter_emails(email):
     """Filter emails based on subject and sender patterns."""

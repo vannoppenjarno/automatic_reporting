@@ -3,8 +3,8 @@ import numpy as np
 import hdbscan
 import os
 
-SENTENCE_EMBEDDING_MODEL = os.getenv("SENTENCE_EMBEDDING_MODEL")
-EMBEDDER = SentenceTransformer(SENTENCE_EMBEDDING_MODEL)
+from config import EMBEDDING_MODEL
+EMBEDDER = SentenceTransformer(EMBEDDING_MODEL)
 
 def embed(text):
     return EMBEDDER.encode(text, normalize_embeddings=True).tolist()  # returns list of vectors

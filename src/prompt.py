@@ -11,12 +11,8 @@ import numpy as np
 import tiktoken
 import os
 
-CONTEXT_PATH = os.getenv("CONTEXT_PATH")
-DAILY_PROMPT_TEMPLATE_PATH = os.getenv("DAILY_PROMPT_TEMPLATE_PATH")
-MODEL = os.getenv("MODEL")
-CONTEXT_WINDOW = int(os.getenv("CONTEXT_WINDOW"))
-TOKEN_ENCODING_MODEL = os.getenv("TOKEN_ENCODING_MODEL")
-MIN_TOKENS_PER_CLUSTER = int(os.getenv("MIN_TOKENS_PER_CLUSTER"))
+from config import CONTEXT_WINDOW, MIN_TOKENS_PER_CLUSTER, TOKEN_ENCODING_MODEL, DAILY_PROMPT_TEMPLATE_PATH, LLM_MODEL, CONTEXT_PATH
+
 LLM_API_KEY = os.getenv("LLM_API_KEY")
 
 def get_context():
@@ -189,7 +185,7 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
 
     return "\n".join(output_lines)
 
-def create_report_chain(model_name: str = MODEL):
+def create_report_chain(model_name: str = LLM_MODEL):
     """
     Build a LangChain pipeline:
         context + logs_text + format_instructions
@@ -229,7 +225,7 @@ def create_report_chain(model_name: str = MODEL):
 
     return chain
 
-def generate_report(logs_text: str, model=MODEL) -> Report:
+def generate_report(logs_text: str, model=LLM_MODEL) -> Report:
     """
     Generate a structured Report from logs_text using:
         - ChatGoogleGenerativeAI via LangChain
@@ -275,7 +271,7 @@ def ask(req: AskRequest):
         talking_product_id=req.talking_product_id,
         k=10
     )
-    llm = ChatGoogleGenerativeAI(model=MODEL, temperature=0, google_api_key=LLM_API_KEY)
+    llm = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0, google_api_key=LLM_API_KEY)
     resp = answer_with_rag(req.question, context, llm)
     return {
         "answer": resp.content if hasattr(resp, "content") else str(resp),
