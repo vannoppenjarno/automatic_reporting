@@ -1,19 +1,5 @@
-from sentence_transformers import SentenceTransformer
 import numpy as np
 import hdbscan
-import os
-
-from config import EMBEDDING_MODEL
-EMBEDDER = SentenceTransformer(EMBEDDING_MODEL)
-
-def embed(text):
-    return EMBEDDER.encode(text, normalize_embeddings=True).tolist()  # returns list of vectors
-
-def add_question_embeddings(data):
-    """Embed all questions in the data dict in-place."""
-    for log in data["logs"]:
-        log["embedding"] = embed(log["question"])
-    return data
 
 def cluster_questions(data, min_cluster_size=2):
     """

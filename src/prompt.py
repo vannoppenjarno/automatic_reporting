@@ -1,5 +1,4 @@
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from sklearn.metrics.pairwise import euclidean_distances
 from .store import retrieve_context
@@ -9,11 +8,11 @@ from fastapi import FastAPI
 from .report import Report
 import numpy as np
 import tiktoken
-import os
 
-from config import CONTEXT_WINDOW, MIN_TOKENS_PER_CLUSTER, TOKEN_ENCODING_MODEL, DAILY_PROMPT_TEMPLATE_PATH, LLM_MODEL, CONTEXT_PATH
+from config import CONTEXT_WINDOW, MIN_TOKENS_PER_CLUSTER, TOKEN_ENCODING_MODEL, DAILY_PROMPT_TEMPLATE_PATH, CONTEXT_PATH, RETRIEVAL_K
 
-LLM_API_KEY = os.getenv("LLM_API_KEY")
+from .models import get_llm_model
+
 
 def get_context():
     """
@@ -185,7 +184,7 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
 
     return "\n".join(output_lines)
 
-def create_report_chain(model_name: str = LLM_MODEL):
+def create_report_chain():
     """
     Build a LangChain pipeline:
         context + logs_text + format_instructions
@@ -198,14 +197,7 @@ def create_report_chain(model_name: str = LLM_MODEL):
     parser = PydanticOutputParser(pydantic_object=Report)
     template_str = get_daily_prompt_template()  # Prompt template – loaded from markdown file
     prompt = ChatPromptTemplate.from_template(template_str)
-
-    # Gemini LLM via LangChain
-    llm = ChatGoogleGenerativeAI(
-        model=model_name,
-        temperature=0,
-        max_retries=5,        # built-in retry for transient errors
-        google_api_key=LLM_API_KEY  # optional; uses env var by default
-    )
+    llm = get_llm_model()
 
     # 4) Build chain:
     #    - supply context + logs_text + format_instructions as inputs
@@ -225,7 +217,7 @@ def create_report_chain(model_name: str = LLM_MODEL):
 
     return chain
 
-def generate_report(logs_text: str, model=LLM_MODEL) -> Report:
+def generate_report(logs_text: str) -> Report:
     """
     Generate a structured Report from logs_text using:
         - ChatGoogleGenerativeAI via LangChain
@@ -235,7 +227,7 @@ def generate_report(logs_text: str, model=LLM_MODEL) -> Report:
     Returns:
         Report instance (Pydantic model)
     """
-    chain = create_report_chain(model_name=model)
+    chain = create_report_chain()
     # The chain expects an input dict with "logs_text" and internally fills context + format_instructions.
     try:
         report: Report = chain.invoke({"logs_text": logs_text})
@@ -251,8 +243,9 @@ def get_rag_prompt():
     with open("src/prompt_input/rag_prompt.md", "r", encoding="utf-8") as f:
         return f.read()
     
-def answer_with_rag(question: str, context: str, llm: ChatGoogleGenerativeAI):
+def answer_with_rag(question: str, context: str):
     rag_prompt = ChatPromptTemplate.from_template(get_rag_prompt())
+    llm = get_llm_model()
     chain = rag_prompt | llm
     return chain.invoke({"question": question, "context": context})
 
@@ -269,10 +262,9 @@ def ask(req: AskRequest):
         query=req.question,
         company_id=req.company_id,
         talking_product_id=req.talking_product_id,
-        k=10
+        k=RETRIEVAL_K
     )
-    llm = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=0, google_api_key=LLM_API_KEY)
-    resp = answer_with_rag(req.question, context, llm)
+    resp = answer_with_rag(req.question, context)
     return {
         "answer": resp.content if hasattr(resp, "content") else str(resp),
         "citations": citations

@@ -6,9 +6,10 @@ from dotenv import load_dotenv  # Import order important!
 load_dotenv()  # Load environment variables from .env file
 
 from src.fetch import fetch_emails, parse_email, parse_csv_logs
+from src.embed import add_question_embeddings
 from src.prompt import generate_report, format_clusters_for_llm
 from src.store import update_db_interactions, update_db_reports, fetch_questions, get_active_company_ids, get_active_talking_product_ids, get_ids, get_company_id, get_latest_interaction_date
-from src.utils import add_question_embeddings, cluster_questions
+from src.utils import cluster_questions
 
 def main_daily(company_id, talking_product_id):
     emails = fetch_emails()  # TODO has to change in the future based in the company_id and talking_product_id

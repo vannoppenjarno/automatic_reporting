@@ -1,4 +1,4 @@
-from .utils import embed
+from .embed import embed
 from supabase import create_client
 from datetime import datetime
 import chromadb, time
