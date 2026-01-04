@@ -1,9 +1,8 @@
 from datetime import date
-import os
 from typing import List, Literal, Optional
 
-from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from google.oauth2 import id_token
@@ -11,13 +10,18 @@ from google.auth.transport import requests as google_requests
 
 from src.prompt import answer_with_rag
 from src.get.data import retrieve_context
-from config import SUPABASE, RETRIEVAL_K, REPORT_TABLES
+from config import SUPABASE, RETRIEVAL_K, REPORT_TABLES, GOOGLE_CLIENT_ID
 
 # ----------------- Setup -----------------
 
-load_dotenv()
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 app = FastAPI(title="Digiole Backend")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5500", "http://localhost:3000", "*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ----------------- Pydantic models -----------------

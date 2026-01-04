@@ -84,3 +84,6 @@ for attempt in range(3):
         time.sleep(3)
 else:
     raise RuntimeError("Failed to connect to Chroma Cloud after 3 retries.")
+
+
+GOOGLE_CLIENT_ID = "634726700514-e1mk0mlff6lacdrs6f7a6shvlj9th6d3.apps.googleusercontent.com"
