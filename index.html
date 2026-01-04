@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Reports Dashboard</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+  <h2>Login</h2>
+  <div id="g_id_onload"
+      data-client_id="YOUR_GOOGLE_CLIENT_ID"
+      data-callback="onGoogleLogin">
+  </div>
+  <div class="g_id_signin" data-type="standard"></div>
+
+  <hr>
+
+  <h2>Talking products</h2>
+  <select id="products"></select>
+
+  <h2>Report type</h2>
+  <select id="reportType">
+    <option value="daily">Daily</option>
+    <option value="weekly">Weekly</option>
+    <option value="monthly">Monthly</option>
+    <option value="aggregated">Aggregated</option>
+  </select>
+
+  <h2>Date</h2>
+  <input type="date" id="reportDate">
+
+  <button onclick="loadReport()">Load report</button>
+
+  <pre id="output"></pre>
+
+  <script>
+    let token = null;
+    const API_BASE = "http://localhost:8000";
+
+    async function api(path, options = {}) {
+      return fetch(API_BASE + path, {
+        ...options,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        }
+      }).then(r => r.json());
+    }
+
+    async function onGoogleLogin(response) {
+      token = response.credential;
+
+      // load talking products after login
+      const products = await api("/me/talking-products");
+
+      const select = document.getElementById("products");
+      select.innerHTML = "";
+
+      products.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.innerText = p.name;
+        select.appendChild(opt);
+      });
+    }
+
+    async function loadReport() {
+      const tp = document.getElementById("products").value;
+      const type = document.getElementById("reportType").value;
+      const date = document.getElementById("reportDate").value;
+
+      const url = `/reports?report_type=${type}&report_date=${date}` +
+                  (["aggregated"].includes(type) ? "" : `&talking_product_id=${tp}`);
+
+      const data = await api(url);
+      document.getElementById("output").innerText =
+        JSON.stringify(data.report, null, 2);
+    }
+  </script>
+</body>
+</html>
