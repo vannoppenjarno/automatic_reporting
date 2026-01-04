@@ -14,7 +14,7 @@ CHUNK_OVERLAP = 200
 # ---------- Namings ----------
 SUBJECT_PATTERN = "jarno"
 SENDER_PATTERN = "mail@i.no-reply-messages.com"
-CHROMA_COLLECTION_NAME = "interactions"
+CHROMA_COLLECTION_NAME = "digiole_automatic_reporting"
 CHROMA_DATABASE = 'Test'
 
 
