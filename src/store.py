@@ -1,11 +1,11 @@
 from .embed import embed
 from supabase import create_client
 from datetime import datetime
-import chromadb, time
-import hashlib
-import os
+import chromadb, time, hashlib, os
 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from typing import Any, Dict, List, Optional, Tuple
+from json2markdown import convert_json_to_markdown_document as json2md
+from langchain_text_splitters import RecursiveCharacterTextSplitter, MarkdownHeaderTextSplitter
 from langchain_core.documents import Document
 
 from config import CHROMA_DATABASE, CHROMA_COLLECTION_NAME, CHUNK_SIZE, CHUNK_OVERLAP
@@ -84,32 +84,8 @@ def update_db_interactions(data, company_id=None, talking_product_id=None):
     print(f"✅ Stored {len(data['logs'])} questions in both Relational and Vector DB for {data['date']}")
     return
 
-def report_to_txt(report) -> str:
-    r = report.model_dump()
-    lines = []
-    lines.append("OVERALL TAKEAWAY:")
-    lines.append(r.get("overall_takeaway", ""))
-    lines.append("\nEXECUTIVE SUMMARY:")
-    for item in r.get("executive_summary", []):
-        lines.append(f"- Objective: {item.get('objective')}")
-        lines.append(f"  Status: {item.get('status')}")
-        lines.append(f"  Key decision needed: {item.get('key_decision_needed')}")
-    lines.append("\nTOPICS:")
-    for t in r.get("topics", []):
-        lines.append(f"\nTopic: {t.get('topic')}")
-        lines.append(f"Observation: {t.get('observation')}")
-        lines.append(f"Implication: {t.get('implication')}")
-        sa = t.get("strategic_alignment", {})
-        rec = t.get("recommendation", {})
-        lines.append(f"Strategic alignment: {sa.get('objective')} | {sa.get('status')}")
-        lines.append(f"Recommendation: {rec.get('priority')} | {rec.get('action')}")
-        if rec.get("alternative"):
-            lines.append(f"Alternative: {rec.get('alternative')}")
-        lines.append(f"Impact: {rec.get('impact')}")
-        lines.append(f"Decision required: {t.get('decision_required')}")
-    return "\n".join(lines)
-
-def upsert_report_to_chroma(report,
+def upsert_report_to_chroma(
+    report: Any,
     company_id: str,
     talking_product_id: str,
     report_type: str,
@@ -117,15 +93,21 @@ def upsert_report_to_chroma(report,
     date_range: tuple = None,
     embed_fn=embed               
 ):
-    text = report_to_txt(report)  # Turn structured report → readable text
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP,
-        # length_function=len is default; separators are ["\n\n", "\n", " ", ""]
-    )
+    # 1) Convert pydantic/dict → plain dict for json2md
+    r = report.model_dump() if hasattr(report, "model_dump") else report
 
-    # Create Document objects with shared metadata
-    base_metadata = {
+    # 2) Dict → markdown string (schema-agnostic)
+    md_report: str = json2md(r)
+
+    # 3) Use LangChain's MarkdownHeaderTextSplitter to split by headers
+    # Only split on level-1 headers ('#') – add ('##', 'Subsection') etc. if you want deeper
+    md_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=[("#", "section_title")]
+    )
+    md_docs: List[Document] = md_splitter.split_text(md_report)
+
+    # 4) Add base metadata
+    base_metadata: Dict[str, Any] = {
         "doc_type": "report_chunk",
         "company_id": company_id,
         "talking_product_id": talking_product_id,
@@ -134,28 +116,47 @@ def upsert_report_to_chroma(report,
         "date_range": date_range,
     }
 
-    docs: list[Document] = text_splitter.create_documents(
-        texts=[text],
-        metadatas=[base_metadata],
+    # Each md_doc has .page_content (section text) and .metadata["section_title"]
+    texts: List[str] = []
+    metadatas: List[Dict[str, Any]] = []
+
+    for section_idx, doc in enumerate(md_docs):
+        section_title = doc.metadata.get("section_title")
+        meta = {
+            **base_metadata,
+            "section_index": section_idx,
+            "section_title": section_title,
+        }
+        texts.append(doc.page_content)
+        metadatas.append(meta)
+
+    # 5) Recursive splitter per section (won't split if below CHUNK_SIZE)
+    recursive_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
+    )
+    docs: List[Document] = recursive_splitter.create_documents(
+        texts=texts,
+        metadatas=metadatas,
     )
 
-    # 3) Prepare ids, contents, metadata, embeddings
-    ids = []
-    documents = []
-    metadatas = []
-    embeddings = []
+    # 6) Prepare ids, contents, metadata, embeddings
+    ids: List[str] = []
+    documents: List[str] = []
+    metadatas_for_chroma: List[Dict[str, Any]] = []
+    embeddings: List[List[float]] = []
 
     for idx, doc in enumerate(docs):
         ids.append(report_chunk_id(talking_product_id, report_type, date, idx))
         documents.append(doc.page_content)
-        metadatas.append(doc.metadata)
+        metadatas_for_chroma.append(doc.metadata)
         if embed_fn:
             embeddings.append(embed_fn(doc.page_content))
 
     COLLECTION.upsert(
         ids=ids,
         documents=documents,
-        metadatas=metadatas,
+        metadatas=metadatas_for_chroma,
         embeddings=embeddings if embeddings else None,
     )
 
