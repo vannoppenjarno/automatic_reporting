@@ -60,7 +60,6 @@ def update_db_interactions(data, company_id=None, talking_product_id=None):
                 "answer": A,
                 "match_score": S,
                 "language": L,
-                "embedding": E,
                 "talking_product_id": talking_product_id
             }).execute()
         except Exception as e:
