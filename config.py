@@ -56,6 +56,12 @@ MANUAL_AGGREGATION_COMPANY_NAME = ""
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SUPABASE = create_client(SUPABASE_URL, SUPABASE_KEY)
+REPORT_TABLES = {
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "aggregated": "aggregated",
+}
 
 
 # ---------- Chroma Cloud Settings ----------
