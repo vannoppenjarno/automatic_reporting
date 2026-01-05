@@ -14,6 +14,10 @@ from config import SUPABASE, RETRIEVAL_K, REPORT_TABLES, GOOGLE_CLIENT_ID
 
 # ----------------- Setup -----------------
 
+# python -m uvicorn src.app.api:app --reload
+# python -m http.server 5500
+
+
 app = FastAPI(title="Digiole Backend")
 app.add_middleware(
     CORSMiddleware,
@@ -118,11 +122,18 @@ async def get_current_user(authorization: str = Header(..., description="Bearer 
     google_sub = idinfo["sub"]
     email = idinfo.get("email", "")
 
-    user = get_or_create_user(google_sub, email)
-    if not user["company_id"]:
+    user_row = get_or_create_user(google_sub, email)
+
+    # If you still want the "pending access" behaviour:
+    if not user_row["company_id"]:
         raise HTTPException(403, "User not linked to a company yet")
-    
-    return user
+
+    # Convert dict → Pydantic model
+    return User(
+        id=user_row["id"],
+        email=user_row["email"],
+        company_id=user_row["company_id"],
+    )
 
 
 # ----------------- Data helpers (tenant-aware) -----------------
