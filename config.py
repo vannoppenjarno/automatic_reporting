@@ -23,6 +23,11 @@ CHUNK_OVERLAP = 200
 SUBJECT_PATTERN = "jarno"
 SENDER_PATTERN = "mail@i.no-reply-messages.com"
 
+# Gmail API settings
+SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
+TOKEN_FILE = "token.json"
+CREDENTIALS_FILE = "gmail/credentials.json"
+
 
 # ---------- Models ----------
 LLM_MODEL = "models/gemini-2.5-flash"
@@ -48,7 +53,7 @@ TALKING_PRODUCT_QR_CODES = ""
 
 
 # ---------- Manual Aggregation Settings ----------
-MANUAL_AGGREGATION_ENABLED = "false"
+MANUAL_AGGREGATION_ENABLED = False
 MANUAL_AGGREGATION_DATE_RANGE = ""
 MANUAL_AGGREGATION_COMPANY_NAME = ""
 
@@ -88,3 +93,4 @@ else:
 
 
 GOOGLE_CLIENT_ID = "634726700514-e1mk0mlff6lacdrs6f7a6shvlj9th6d3.apps.googleusercontent.com"
+
