@@ -7,61 +7,186 @@
 </head>
 
 <body>
-  <h2>Login</h2>
-  <div id="g_id_onload"
-      data-client_id="YOUR_GOOGLE_CLIENT_ID"
-      data-callback="onGoogleLogin">
+  <!-- LOGIN SCREEN -->
+  <div id="loginSection">
+    <h2>Login</h2>
+    <div id="g_id_onload"
+        data-client_id="634726700514-e1mk0mlff6lacdrs6f7a6shvlj9th6d3.apps.googleusercontent.com"
+        data-callback="onGoogleLogin">
+    </div>
+    <div class="g_id_signin" data-type="standard"></div>
   </div>
-  <div class="g_id_signin" data-type="standard"></div>
 
-  <hr>
+  <!-- NO ACCESS YET SCREEN -->
+  <div id="noAccessSection" style="display:none;">
+    <h2>Account pending access</h2>
+    <p>Your account is created, but not linked to any company yet.</p>
+    <p>Please contact the admin to link you, then refresh and log in again.</p>
+  </div>
 
-  <h2>Talking products</h2>
-  <select id="products"></select>
+  <!-- APP SCREEN -->
+  <div id="appSection" style="display:none;">
+    <h2>Talking products</h2>
+    <select id="products"></select>
 
-  <h2>Report type</h2>
-  <select id="reportType">
-    <option value="daily">Daily</option>
-    <option value="weekly">Weekly</option>
-    <option value="monthly">Monthly</option>
-    <option value="aggregated">Aggregated</option>
-  </select>
+    <h2>Report type</h2>
+    <select id="reportType">
+      <option value="daily">Daily</option>
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+      <option value="aggregated">Aggregated</option>
+    </select>
 
-  <h2>Date</h2>
-  <input type="date" id="reportDate">
+    <h2>Date</h2>
+    <input type="date" id="reportDate">
+    <button onclick="loadReport()">Load report</button>
 
-  <button onclick="loadReport()">Load report</button>
+    <h2>Report</h2>
+    <div id="report"></div>
+  </div>
 
-  <pre id="output"></pre>
+<script>
+  async function loadReport() {
+    const tp = document.getElementById("products").value;
+    const type = document.getElementById("reportType").value;
+    const date = document.getElementById("reportDate").value;
 
+    const url = `/reports?report_type=${type}&report_date=${date}` +
+                (["aggregated"].includes(type) ? "" : `&talking_product_id=${tp}`);
+
+    const data = await api(url);
+    renderReport(data.report);
+  }
+
+  function renderReport(report) {
+    const container = document.getElementById("report");
+    container.innerHTML = "";
+
+    // THEMES / TOPICS
+    const themesHtml = report.topics.map(t => `
+      <div style="border:1px solid #ddd;padding:16px;border-radius:12px;margin-bottom:12px;">
+        <h3>✔ ${t.topic}</h3>
+
+        <h4>Observation</h4>
+        <p>${t.observation}</p>
+
+        <h4>Implication</h4>
+        <p>${t.implication}</p>
+
+        <h4>Strategic Alignment</h4>
+        <p><strong>${t.strategic_alignment.objective}</strong> — ${t.strategic_alignment.status}</p>
+
+        <h4>Recommendation</h4>
+        <p><strong>Priority:</strong> ${t.recommendation.priority}</p>
+        <p><strong>Action:</strong> ${t.recommendation.action}</p>
+        <p><strong>Alternative:</strong> ${t.recommendation.alternative || "—"}</p>
+        <p><strong>Impact:</strong> ${t.recommendation.impact}</p>
+
+        <h4>Decision Required</h4>
+        <p>${t.decision_required}</p>
+      </div>
+    `).join("");
+
+    // EXECUTIVE SUMMARY
+    const summaryHtml = report.executive_summary.map(s => `
+      <div style="border:1px solid #ddd;padding:16px;border-radius:12px;margin-bottom:12px;">
+        <h4>Objective</h4>
+        <p>${s.objective}</p>
+        <h4>Status</h4>
+        <p>${s.status}</p>
+        <h4>Key Decision Needed</h4>
+        <p>${s.key_decision_needed}</p>
+      </div>
+    `).join("");
+
+    container.innerHTML = `
+      <h2>Themes</h2>
+      ${themesHtml}
+
+      <h2>Executive Summary</h2>
+      ${summaryHtml}
+
+      <h2>Overall Takeaway</h2>
+      <div style="background:#eef3ff;padding:16px;border-radius:12px;">
+        ${report.overall_takeaway}
+      </div>
+    `;
+  }
+</script>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
     let token = null;
-    const API_BASE = "http://localhost:8000";
+    const API_BASE = "http://127.0.0.1:8000";
+
+    function showLogin() {
+      document.getElementById("loginSection").style.display = "block";
+      document.getElementById("noAccessSection").style.display = "none";
+      document.getElementById("appSection").style.display = "none";
+    }
+
+    function showNoAccess() {
+      document.getElementById("loginSection").style.display = "none";
+      document.getElementById("noAccessSection").style.display = "block";
+      document.getElementById("appSection").style.display = "none";
+    }
+
+    function showApp() {
+      document.getElementById("loginSection").style.display = "none";
+      document.getElementById("noAccessSection").style.display = "none";
+      document.getElementById("appSection").style.display = "block";
+    }
 
     async function api(path, options = {}) {
-      return fetch(API_BASE + path, {
+      const res = await fetch(API_BASE + path, {
         ...options,
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
           ...(options.headers || {})
         }
-      }).then(r => r.json());
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw { status: res.status, data };
+      }
+      return data;
     }
 
     async function onGoogleLogin(response) {
       token = response.credential;
 
-      // load talking products after login
-      const products = await api("/me/talking-products");
+      try {
+        // This call:
+        // 1) verifies the token
+        // 2) auto-creates the user row if needed
+        // 3) returns talking products if company_id is set
+        const products = await api("/me/talking-products");
+        populateProducts(products);
+        showApp();
+      } catch (err) {
+        console.log("Login/backend error:", err);
 
+        // If the backend raised "User not linked to a company yet"
+        if (err.status === 403 && String(err.data?.detail || "").includes("User not linked")) {
+          // User row *is* now created in Supabase with company_id = NULL
+          showNoAccess();
+        } else {
+          alert("Unexpected login error. Check the console.");
+          showLogin();
+        }
+      }
+    }
+
+    function populateProducts(products) {
       const select = document.getElementById("products");
       select.innerHTML = "";
-
       products.forEach(p => {
         const opt = document.createElement("option");
         opt.value = p.id;
-        opt.innerText = p.name;
+        opt.textContent = p.name;
         select.appendChild(opt);
       });
     }
@@ -72,12 +197,12 @@
       const date = document.getElementById("reportDate").value;
 
       const url = `/reports?report_type=${type}&report_date=${date}` +
-                  (["aggregated"].includes(type) ? "" : `&talking_product_id=${tp}`);
+                  (type === "aggregated" ? "" : `&talking_product_id=${tp}`);
 
       const data = await api(url);
-      document.getElementById("output").innerText =
-        JSON.stringify(data.report, null, 2);
+      renderReport(data.report);
     }
+
+    showLogin();
   </script>
 </body>
-</html>
