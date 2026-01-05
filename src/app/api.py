@@ -44,6 +44,10 @@ class TalkingProduct(BaseModel):
 class Report(BaseModel):
     report: dict  # just wrap the raw JSON
 
+class LatestReport(BaseModel):
+    date: date
+    report: dict
+
 class AskRequest(BaseModel):
     talking_product_id: Optional[str] = None
     question: str
@@ -222,6 +226,56 @@ def get_report(
         raise HTTPException(404, "Report not found")
 
     return Report(report=rows[0]["report"])
+
+
+@app.get(
+    "/reports/latest",
+    response_model=LatestReport,
+    summary="Fetch latest report (date + JSON) for a talking product & type",
+)
+def get_latest_report(
+    report_type: Literal["daily", "weekly", "monthly", "aggregated"] = Query(...),
+    talking_product_id: Optional[str] = Query(
+        None,
+        description="Required for daily/weekly/monthly. Optional for aggregated.",
+    ),
+    current_user: User = Depends(get_current_user),
+):
+    table = REPORT_TABLES[report_type]
+
+    if report_type in ("daily", "weekly", "monthly"):
+        if not talking_product_id:
+            raise HTTPException(400, "talking_product_id is required for this report type")
+        ensure_product_belongs_to_company(talking_product_id, current_user.company_id)
+
+        res = (
+            SUPABASE.table(table)
+            .select("date,report")
+            .eq("talking_product_id", talking_product_id)
+            .order("date", desc=True)
+            .limit(1)
+            .execute()
+        )
+    else:  # aggregated
+        query = (
+            SUPABASE.table(table)
+            .select("date,report")
+            .eq("company_id", current_user.company_id)
+            .order("date", desc=True)
+        )
+        if talking_product_id:
+            ensure_product_belongs_to_company(talking_product_id, current_user.company_id)
+            query = query.eq("talking_product_id", talking_product_id)
+
+        res = query.limit(1).execute()
+
+    rows = res.data or []
+    if not rows:
+        raise HTTPException(404, "No reports found")
+
+    row = rows[0]
+    # Supabase returns date as string; FastAPI will coerce to `date`
+    return LatestReport(date=row["date"], report=row["report"])
 
 
 # ----------------- RAG Q&A endpoint (tenant-safe) -----------------
