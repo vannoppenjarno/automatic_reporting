@@ -3,8 +3,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from config import EMBED_MODEL, LLM_MODEL, LLM_API_KEY
 
 
-def get_embedding_function(embedding_model: str = EMBED_MODEL):
-    return SentenceTransformer(embedding_model)
+def get_embed_model(embed_model: str = EMBED_MODEL):
+    return SentenceTransformer(embed_model)
 
 def get_llm_model(llm_model: str = LLM_MODEL):
     # Placeholder for LLM model retrieval logic
