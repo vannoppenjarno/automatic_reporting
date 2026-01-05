@@ -2,135 +2,752 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Reports Dashboard TEST</title>
+  <title>Digiole Reports</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --primary: #2563eb;
+      --primary-soft: #e0edff;
+      --primary-soft-strong: #d1e1ff;
+      --accent: #4ade80;
+      --accent-soft: #e9fbe9;
+      --danger: #ef4444;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --radius-lg: 16px;
+      --radius-md: 10px;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #e0edff 0, #f5f7fb 30%, #f9fafb 100%);
+      color: var(--text-main);
+    }
+
+    .app-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Top bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 20px;
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+    }
+
+    .brand-name {
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .user-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      background: #1d4ed8;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.3);
+    }
+
+    /* Cards / containers */
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: var(--shadow-soft);
+      padding: 20px 24px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .card-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Layout for main app */
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 320px) minmax(0, 1.6fr);
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 900px) {
+      .app-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    /* Form / selectors */
+
+    .selector-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .selector-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    select,
+    input[type="date"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      outline: none;
+      background: #f9fafb;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    select:focus,
+    input[type="date"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+      background: #ffffff;
+    }
+
+    .pill-tabs {
+      display: inline-flex;
+      background: #eef2ff;
+      border-radius: 999px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .pill-tab {
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 13px;
+      border: none;
+      background: transparent;
+      color: #4b5563;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .pill-tab.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 3px 8px rgba(79, 70, 229, 0.25);
+    }
+
+    /* Buttons */
+
+    .btn {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: white;
+      box-shadow: 0 12px 25px rgba(37, 99, 235, 0.45);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(37, 99, 235, 0.55);
+    }
+
+    .btn-outline {
+      background: white;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      background: #f3f4ff;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+
+    /* Login card */
+
+    #loginSection .card {
+      max-width: 420px;
+      margin: 40px auto;
+      text-align: center;
+    }
+
+    #loginSection h2 {
+      margin-bottom: 4px;
+    }
+
+    #loginSection p {
+      margin-top: 0;
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
+
+    /* Report content styling */
+
+    #report {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section-heading {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-heading span {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #166534;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .topic-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      background: #f9fafb;
+    }
+
+    .topic-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .topic-title {
+      font-weight: 600;
+    }
+
+    .pill-success {
+      background: var(--accent-soft);
+      color: #166534;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .topic-section-title {
+      margin-top: 10px;
+      margin-bottom: 4px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .topic-text {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .takeaway-box {
+      background: #eef3ff;
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      border: 1px solid #d0ddff;
+      font-size: 14px;
+      line-height: 1.5;
+      display: flex;
+      gap: 10px;
+    }
+
+    .takeaway-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6366f1;
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+
+    /* Chat styling */
+
+    #chatSection {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Chat page container: same max width as reports */
+    #chatSection .card {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Make chat window wider + reduce height */
+    #chatWindow {
+      height: 480px;              /* was 600 — adjust as you like */
+      max-width: 100%;
+      margin: 10px 0;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      overflow-y: auto;           /* scroll only inside chat */
+    }
+
+    .msg.user {
+      background: #dbeafe;
+      margin-left: auto;
+    }
+
+    .msg.assistant {
+      background: #ffffff;
+      margin-right: auto;
+      border: 1px solid #e5e7eb;
+    }
+
+    /* Message bubbles */
+    .msg {
+      max-width: 75%;             /* wider bubbles */
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    /* Chat input row wider + aligned */
+    #chatInputRow {
+      display: flex;
+      gap: 10px;
+      max-width: 100%;
+      margin-top: 10px;
+    }
+
+    #chatInput {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 999px;
+    }
+
+    #chatInput:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+      background: white;
+    }
+
+    /* Messages / helpers */
+
+    .muted {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .no-access {
+      text-align: center;
+      max-width: 420px;
+      margin: 60px auto;
+    }
+
+    .no-access h2 {
+      margin-bottom: 8px;
+    }
+
+    .no-access p {
+      margin-top: 0;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .filters-bar {
+      padding: 12px 16px;
+    }
+
+    .filters-row {
+      display: flex;
+      gap: 24px;
+      align-items: flex-end;
+    }
+
+    .filter label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 3px;
+      display: block;
+    }
+
+    /* Report type tabs */
+    .pill-tab {
+      transition: 0.2s ease;
+    }
+
+    .pill-tab:hover {
+      background: #dbeafe;
+      color: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .pill-tab.active {
+      background: white;
+      color: #2563eb;
+      box-shadow: 0 4px 10px rgba(37,99,235,.25);
+    }
+
+    /* Accordion themes */
+    .accordion {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      background: white;
+    }
+
+    .accordion-header {
+      width: 100%;
+      border: none;
+      background: white;
+      padding: 12px 16px;
+      font-size: 15px;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .accordion-header:hover {
+      background: #f3f4ff;
+    }
+
+    .accordion-body {
+      display: none;
+      padding: 14px 16px;
+      background: #fafafa;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .accordion.open .accordion-body {
+      display: block;
+    }
+
+    .arrow {
+      transition: transform .2s;
+    }
+
+    .accordion.open .arrow {
+      transform: rotate(180deg);
+    }
+
+    /* Report card width */
+    .report-card {
+      width: 100%;
+    }
+
+  </style>
 </head>
 
 <body>
-  <!-- LOGIN SCREEN -->
-  <div id="loginSection">
-    <h2>Login</h2>
-    <div id="g_id_onload"
-        data-client_id="634726700514-e1mk0mlff6lacdrs6f7a6shvlj9th6d3.apps.googleusercontent.com"
-        data-callback="onGoogleLogin">
+  <div class="app-shell">
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-logo">D</div>
+        <div>
+          <div class="brand-name">Digiole Reports</div>
+          <div class="brand-subtitle">Business Intelligence Dashboard</div>
+        </div>
+      </div>
+      <div class="user-badge">D</div>
+    </header>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginSection">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Welcome</div>
+            <div class="card-subtitle">Sign in to view your reports</div>
+          </div>
+        </div>
+        <p>Use your Google account to access Digiole's reporting dashboard.</p>
+        <div id="g_id_onload"
+             data-client_id="634726700514-e1mk0mlff6lacdrs6f7a6shvlj9th6d3.apps.googleusercontent.com"
+             data-callback="onGoogleLogin">
+        </div>
+        <div class="g_id_signin" data-type="standard"></div>
+      </div>
     </div>
-    <div class="g_id_signin" data-type="standard"></div>
-  </div>
 
-  <!-- NO ACCESS YET SCREEN -->
-  <div id="noAccessSection" style="display:none;">
-    <h2>Account pending access</h2>
-    <p>Your account is created, but not linked to any company yet.</p>
-    <p>Please contact the admin to link you, then refresh and log in again.</p>
-  </div>
+    <!-- NO ACCESS YET SCREEN -->
+    <div id="noAccessSection" style="display:none;">
+      <div class="card no-access">
+        <h2>Access pending</h2>
+        <p>Your user account has been created but is not yet linked to a company.</p>
+        <p class="muted">Please contact the admin to link your account, then refresh and log in again.</p>
+      </div>
+    </div>
 
-  <!-- APP SCREEN -->
-  <div id="appSection" style="display:none;">
+    <!-- APP SCREEN -->
+    <div id="appSection" style="display:none;">
 
-    <button id="openChatBtn">Q&A Assistant</button>
+      <!-- Top header card -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Interaction Report</div>
+            <div class="card-subtitle">
+              Select a talking product and date to explore AI-generated insights.
+            </div>
+          </div>
+          <button id="openChatBtn" class="btn btn-outline">
+            💬 Discuss with AI
+          </button>
+        </div>
+      </div>
 
-    <h2>Talking products</h2>
-    <select id="products"></select>
+      <!-- Filters bar -->
+      <div class="filters-bar card">
+        <div class="filters-row">
 
-    <h2>Report type</h2>
-    <select id="reportType">
-      <option value="daily">Daily</option>
-      <option value="weekly">Weekly</option>
-      <option value="monthly">Monthly</option>
-      <option value="aggregated">Aggregated</option>
-    </select>
+          <div class="filter">
+            <label>Talking Product</label>
+            <select id="products"></select>
+          </div>
 
-    <h2>Date</h2>
-    <input type="date" id="reportDate">
-    <!-- <button onclick="loadReport()">Load report</button> -->
+          <div class="filter">
+            <label>Report Type</label>
+            <div class="pill-tabs">
+              <button class="pill-tab active" data-type="daily">Daily</button>
+              <button class="pill-tab" data-type="weekly">Weekly</button>
+              <button class="pill-tab" data-type="monthly">Monthly</button>
+              <button class="pill-tab" data-type="aggregated">Aggregated</button>
+            </div>
+            <!-- hidden select used by JS -->
+            <select id="reportType" style="display:none;">
+              <option value="daily" selected>Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="aggregated">Aggregated</option>
+            </select>
+          </div>
 
-    <h2>Report</h2>
-    <div id="report"></div>
-  </div>
+          <div class="filter">
+            <label>Date</label>
+            <input type="date" id="reportDate">
+          </div>
 
-  <div id="chatSection" style="display:none; max-width:800px; margin:0 auto;">
-    <button id="backToReportsBtn">← Back to reports</button>
-    <h2>Q&A Assistant</h2>
+        </div>
+      </div>
 
-    <div id="chatWindow" style="
-        border:1px solid #ddd;
-        height:400px;
-        overflow-y:auto;
-        padding:8px;
-        border-radius:8px;
-        background:#fafafa;
-        margin-bottom:8px;"></div>
+      <!-- Report card (full width) -->
+      <div class="card report-card">
+        <div class="section-heading">
+          <span>REPORT</span>
+        </div>
+        <div id="report">
+          <p class="muted">Select a talking product and report to view AI-generated insights.</p>
+        </div>
+      </div>
 
-    <div id="chatInputRow" style="display:flex; gap:8px;">
-      <input id="chatInput" type="text" placeholder="Ask a question about your reports..."
-            style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc;">
-      <button id="sendChatBtn">Send</button>
+    </div>
+
+    <!-- CHAT SECTION -->
+    <div id="chatSection" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Q&A Assistant</div>
+            <div class="card-subtitle">Ask questions about your reports and interactions.</div>
+          </div>
+          <button id="backToReportsBtn" class="btn btn-ghost">← Back to reports</button>
+        </div>
+
+        <div id="chatWindow"></div>
+
+        <div id="chatInputRow" style="display:flex; gap:8px;">
+          <input id="chatInput" type="text" placeholder="Ask a question about your reports...">
+          <button id="sendChatBtn" class="btn btn-primary">Send</button>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- Report rendering script -->
+  <script>
+    function renderReport(report) {
+      const container = document.getElementById("report");
+      container.innerHTML = "";
 
-<script>
+      if (!report) {
+        container.innerHTML = '<p class="muted">No report content available.</p>';
+        return;
+      }
 
-  function renderReport(report) {
-    const container = document.getElementById("report");
-    container.innerHTML = "";
+      const topics = report.topics || [];
+      const execSummary = report.executive_summary || [];
+      const overall = report.overall_takeaway || "";
 
-    // THEMES / TOPICS
-    const themesHtml = report.topics.map(t => `
-      <div style="border:1px solid #ddd;padding:16px;border-radius:12px;margin-bottom:12px;">
-        <h3>✔ ${t.topic}</h3>
+      const themesHtml = topics.map((t, idx) => `
+        <div class="accordion">
+          <button class="accordion-header">
+            <span>${t.topic}</span>
+            <span class="arrow">▾</span>
+          </button>
 
-        <h4>Observation</h4>
-        <p>${t.observation}</p>
+          <div class="accordion-body">
+            <p><strong>Observation</strong><br>${t.observation}</p>
+            <p><strong>Implication</strong><br>${t.implication}</p>
+            <p><strong>Strategic Alignment</strong><br>
+            ${t.strategic_alignment.objective} – ${t.strategic_alignment.status}</p>
+            <p><strong>Recommendation</strong><br>${t.recommendation.action}</p>
+            <p><strong>Decision Required</strong><br>${t.decision_required}</p>
+          </div>
+        </div>
+      `).join("");
 
-        <h4>Implication</h4>
-        <p>${t.implication}</p>
+      const summaryHtml = execSummary.map(s => `
+        <div class="topic-card">
+          <div class="topic-section-title">Executive summary</div>
+          <p class="topic-text"><strong>Objective:</strong> ${s.objective}</p>
+          <p class="topic-text">
+            <strong>Status:</strong>
+            <span class="badge-status">
+              <span class="badge-status-dot"></span>
+              ${s.status}
+            </span>
+          </p>
+          <p class="topic-text"><strong>Key decision needed:</strong> ${s.key_decision_needed}</p>
+        </div>
+      `).join("");
 
-        <h4>Strategic Alignment</h4>
-        <p><strong>${t.strategic_alignment.objective}</strong> — ${t.strategic_alignment.status}</p>
+      const takeawayHtml = overall ? `
+        <div class="takeaway-box">
+          <div class="takeaway-icon">💡</div>
+          <div>${overall}</div>
+        </div>
+      ` : "";
 
-        <h4>Recommendation</h4>
-        <p><strong>Priority:</strong> ${t.recommendation.priority}</p>
-        <p><strong>Action:</strong> ${t.recommendation.action}</p>
-        <p><strong>Alternative:</strong> ${t.recommendation.alternative || "—"}</p>
-        <p><strong>Impact:</strong> ${t.recommendation.impact}</p>
+      container.innerHTML = `
+        <div class="section-heading">
+          <span>THEMES</span>
+        </div>
+        ${themesHtml || '<p class="muted">No themes available.</p>'}
 
-        <h4>Decision Required</h4>
-        <p>${t.decision_required}</p>
-      </div>
-    `).join("");
+        <div class="section-heading" style="margin-top:18px;">
+          <span>EXECUTIVE SUMMARY</span>
+        </div>
+        ${summaryHtml || '<p class="muted">No executive summary available.</p>'}
 
-    // EXECUTIVE SUMMARY
-    const summaryHtml = report.executive_summary.map(s => `
-      <div style="border:1px solid #ddd;padding:16px;border-radius:12px;margin-bottom:12px;">
-        <h4>Objective</h4>
-        <p>${s.objective}</p>
-        <h4>Status</h4>
-        <p>${s.status}</p>
-        <h4>Key Decision Needed</h4>
-        <p>${s.key_decision_needed}</p>
-      </div>
-    `).join("");
+        <div class="section-heading" style="margin-top:18px;">
+          <span>OVERALL TAKEAWAY</span>
+        </div>
+        ${takeawayHtml || '<p class="muted">No overall takeaway available.</p>'}
+      `;
+    }
+  </script>
 
-    container.innerHTML = `
-      <h2>Themes</h2>
-      ${themesHtml}
-
-      <h2>Executive Summary</h2>
-      ${summaryHtml}
-
-      <h2>Overall Takeaway</h2>
-      <div style="background:#eef3ff;padding:16px;border-radius:12px;">
-        ${report.overall_takeaway}
-      </div>
-    `;
-  }
-</script>
-
+  <!-- Main logic script -->
   <script>
     let token = null;
     const API_BASE = "http://127.0.0.1:8000";
-    let messages = []; // {role: "user"|"assistant", content: string, citations?: array}
+    let messages = [];
 
     function showLogin() {
       document.getElementById("loginSection").style.display = "block";
@@ -187,17 +804,16 @@
 
         // defaults
         document.getElementById("reportType").value = "daily";
+        setActiveTab("daily");
         showApp();
 
-        // auto-load latest report for first product (if any)
         if (products.length > 0) {
           try {
             await loadLatestReport();
           } catch (err) {
-            // If we get here, it's NOT a simple 404 (that’s already handled inside loadLatestReport)
             console.log("Error loading latest report on login:", err);
             document.getElementById("report").innerHTML =
-              "<p>Could not load latest report. Please pick another date/type.</p>";
+              "<p class='muted'>Could not load latest report. Please pick another date or type.</p>";
           }
         }
       } catch (err) {
@@ -211,8 +827,6 @@
         }
       }
     }
-
-
 
     function populateProducts(products) {
       const select = document.getElementById("products");
@@ -250,24 +864,18 @@
 
       try {
         const data = await api(url);
-
-        // data.date is e.g. "2025-01-05"
         document.getElementById("reportDate").value = data.date;
-
-        // render report
         renderReport(data.report);
       } catch (err) {
         console.log("loadLatestReport error:", err);
 
-        // If there is simply no report yet, don't treat it as a login failure
         if (err.status === 404) {
           document.getElementById("reportDate").value = "";
           document.getElementById("report").innerHTML =
-            "<p>No reports found for this selection.</p>";
+            "<p class='muted'>No reports found for this selection.</p>";
           return;
         }
 
-        // For other errors, rethrow so caller can decide
         throw err;
       }
     }
@@ -279,10 +887,8 @@
 
       inputEl.value = "";
 
-      // Use currently selected talking product if any
       const tp = document.getElementById("products").value || null;
 
-      // Add user message
       messages.push({ role: "user", content: text });
       renderChat();
 
@@ -318,18 +924,6 @@
       messages.forEach(msg => {
         const div = document.createElement("div");
         div.className = "msg " + msg.role;
-        div.style.margin = "8px 0";
-        div.style.padding = "8px 12px";
-        div.style.borderRadius = "12px";
-        div.style.maxWidth = "70%";
-
-        if (msg.role === "user") {
-          div.style.background = "#e0f7ff";
-          div.style.marginLeft = "auto";
-        } else {
-          div.style.background = "#f1f1f1";
-          div.style.marginRight = "auto";
-        }
 
         const p = document.createElement("p");
         p.textContent = msg.content;
@@ -337,7 +931,7 @@
 
         if (msg.citations && msg.citations.length) {
           const small = document.createElement("small");
-          small.textContent = "Sources: " + msg.citations.join(", ");
+          small.textContent = "Sources: " + msg.citations.map(c => c.i).join(", ");
           div.appendChild(small);
         }
 
@@ -347,19 +941,36 @@
       chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
-    // Change talking product → latest report for that product & current type
+    // Helper to sync pill tabs and hidden select
+    function setActiveTab(type) {
+      const tabs = document.querySelectorAll(".pill-tab");
+      tabs.forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.type === type);
+      });
+      document.getElementById("reportType").value = type;
+    }
+
+    // Listeners
     document.getElementById("products").addEventListener("change", () => {
       loadLatestReport();
     });
 
-    // Change report type → latest report for that type & current product
-    document.getElementById("reportType").addEventListener("change", () => {
-      loadLatestReport();
-    });
-
-    // Change date → load report for that date
     document.getElementById("reportDate").addEventListener("change", () => {
       loadReport();
+    });
+
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".accordion-header")) return;
+      const acc = e.target.closest(".accordion");
+      acc.classList.toggle("open");
+    });
+
+    document.querySelectorAll(".pill-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        const type = tab.dataset.type;
+        setActiveTab(type);
+        loadLatestReport();
+      });
     });
 
     document.getElementById("openChatBtn").addEventListener("click", () => {
@@ -384,3 +995,4 @@
     showLogin();
   </script>
 </body>
+</html>
