@@ -1,10 +1,6 @@
 import calendar, os, glob
 from datetime import datetime
 from datetime import timedelta
-from dotenv import load_dotenv  # Import order important!
-
-load_dotenv()  # Load environment variables from .env file
-
 from src.fetch import fetch_emails, parse_email, parse_csv_logs
 from src.embed import add_question_embeddings
 from src.prompt import generate_report
@@ -91,8 +87,8 @@ if __name__ == "__main__":
 
     # 2. Process CSV logs for all files in the CSV_LOGS_DIR
     try:
-        csv_dir = os.getenv("CSV_LOGS_DIR")  
-        csv_files = glob.glob(os.path.join(csv_dir, "*.csv"))
+        from config import CSV_LOGS_DIR
+        csv_files = glob.glob(os.path.join(CSV_LOGS_DIR, "*.csv"))
         for csv_file in csv_files:
             talking_product_name = os.path.splitext(os.path.basename(csv_file))[0]  # CSV file name must be equal to the corresponding talking product name!
             talking_product_id, company_id = get_ids(talking_product_name)
@@ -102,9 +98,7 @@ if __name__ == "__main__":
         print(f"Processing failed for {csv_file}: {e}")
 
     # 2.1. Manual aggregation
-    manual_aggregation = os.getenv("MANUAL_AGGREGATION_ENABLED", "false").lower() == "true"
-    if manual_aggregation:
-        date_range = os.getenv("MANUAL_AGGREGATION_DATE_RANGE")  
-        company_name = os.getenv("MANUAL_AGGREGATION_COMPANY_NAME")
-        company_id = get_company_id(company_name)
-        main_aggregate(date_range, report_type="aggregated", company_id=company_id)
+    from config import MANUAL_AGGREGATION_ENABLED, MANUAL_AGGREGATION_DATE_RANGE, MANUAL_AGGREGATION_COMPANY_NAME
+    if MANUAL_AGGREGATION_ENABLED:
+        company_id = get_company_id(MANUAL_AGGREGATION_COMPANY_NAME)
+        main_aggregate(MANUAL_AGGREGATION_DATE_RANGE, report_type="aggregated", company_id=company_id)

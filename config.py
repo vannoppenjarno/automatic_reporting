@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os, chromadb, time
 
 
-load_dotenv()
+load_dotenv()  # Load environment variables from .env file
 
 
 # ########## Configuration Settings ##########
@@ -28,6 +28,7 @@ SENDER_PATTERN = "mail@i.no-reply-messages.com"
 LLM_MODEL = "models/gemini-2.5-flash"
 EMBED_MODEL = "BAAI/bge-m3"
 TOKEN_ENCODING_MODEL = "cl100k_base"
+LLM_API_KEY = os.getenv("LLM_API_KEY")
 
 
 # ---------- File paths ----------

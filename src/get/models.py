@@ -1,10 +1,7 @@
 from sentence_transformers import SentenceTransformer
 from langchain_google_genai import ChatGoogleGenerativeAI
-import os
+from config import EMBED_MODEL, LLM_MODEL, LLM_API_KEY
 
-from config import EMBED_MODEL, LLM_MODEL
-
-LLM_API_KEY = os.getenv("LLM_API_KEY")
 
 def get_embedding_function(embedding_model: str = EMBED_MODEL):
     return SentenceTransformer(embedding_model)
