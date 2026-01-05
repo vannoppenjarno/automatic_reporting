@@ -86,15 +86,21 @@ def get_latest_interaction_date(talking_product_id):
 def retrieve_context(query: str, company_id: str, talking_product_id: str | None, embed_fn = embed, k: int = 8, date=None, start_date=None, end_date=None):
     q_emb = embed_fn(query)
 
-    where = {"company_id": company_id}
+    clauses = [{"company_id": company_id}]
     if talking_product_id is not None:
-        where["talking_product_id"] = talking_product_id
-    
+        clauses.append({"talking_product_id": talking_product_id})
+
     if date is not None:
-        where["date"] = date
+        clauses.append({"date": date})
 
     if start_date is not None and end_date is not None:
-        where["date"] = {"$gte": start_date, "$lte": end_date}
+        clauses.append({"date": {"$gte": start_date, "$lte": end_date}})
+
+    # --- Build final WHERE ---
+    if len(clauses) == 1:
+        where = clauses[0]        # single filter → don't wrap in $and
+    else:
+        where = {"$and": clauses} # multiple filters → Chroma requires $and
 
     # TODO: filter by report_type if needed and by doc_type!!!
 
