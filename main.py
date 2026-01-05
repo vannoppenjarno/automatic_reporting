@@ -2,20 +2,20 @@ import calendar, os, glob
 from datetime import datetime
 from datetime import timedelta
 from src.fetch import fetch_emails, parse_email, parse_csv_logs
-from src.embed import add_question_embeddings
+from src.embed import embed_fn, add_question_embeddings
 from src.prompt import generate_report
 from src.store import update_db_interactions, update_db_reports
 from src.get.data import get_active_company_ids, get_active_talking_product_ids, get_latest_interaction_date, get_ids, get_company_id, fetch_questions
 from src.utils import cluster_questions, format_clusters_for_llm
 
 def main_daily(company_id, talking_product_id):
-    emails = fetch_emails()  # TODO has to change in the future based in the company_id and talking_product_id
-    if not emails:
+    emails_by_date, service = fetch_emails()  # TODO has to change in the future based in the company_id and talking_product_id
+    if not emails_by_date:
         print("No new emails found.")
         return
 
-    for date, email_list in emails.items():
-        data = parse_email(date, email_list)
+    for date, email_list in emails_by_date.items():
+        data = parse_email(date, email_list, service)
         data = add_question_embeddings(data)  # Embed questions in the data
         update_db_interactions(data, company_id, talking_product_id)  # Store interactions in both the relational and vector DB
 
@@ -25,7 +25,7 @@ def main_daily(company_id, talking_product_id):
 
         # Generate structured daily report with LLM
         report = generate_report(logs_text)
-        update_db_reports(data, report, talking_product_id=talking_product_id)  # Save interactions + report in the SQLite database
+        update_db_reports(data, report, embed_fn, talking_product_id=talking_product_id)  # Save interactions + report in the SQLite database
 
 def main_aggregate(date_range, report_type, talking_product_id=None, company_id=None):
     """Generate aggregated reports (Weekly, Monthly, or custom) for a given date range, talking product id and company id. The talking product id should correspond to the correct company id."""
@@ -39,7 +39,7 @@ def main_aggregate(date_range, report_type, talking_product_id=None, company_id=
     clusters, noise = cluster_questions(data)
     logs_text = format_clusters_for_llm(data, clusters, noise)
     report = generate_report(logs_text)
-    update_db_reports(data, report, report_type, company_id, talking_product_id, date_range)
+    update_db_reports(data, report, embed_fn, report_type, company_id, talking_product_id, date_range)
 
 def main_csv(csv_file, company_id, talking_product_id):
     latest_date = get_latest_interaction_date(talking_product_id)  # Fetch latest processed date for this TP
@@ -50,7 +50,7 @@ def main_csv(csv_file, company_id, talking_product_id):
         print(f"No new data to process for talking_product_id={talking_product_id} from CSV {csv_file}.")
         return
     
-    data = add_question_embeddings(data)
+    data = add_question_embeddings(data)  
     update_db_interactions(data, company_id, talking_product_id)
 
     clusters, noise = cluster_questions(data)
@@ -58,7 +58,7 @@ def main_csv(csv_file, company_id, talking_product_id):
     print(logs_text)  # For debugging
 
     report = generate_report(logs_text)
-    update_db_reports(data, report, report_type="aggregated", company_id=company_id, talking_product_id=talking_product_id)
+    update_db_reports(data, report, embed_fn, report_type="aggregated", company_id=company_id, talking_product_id=talking_product_id)
 
 
 

@@ -1,6 +1,4 @@
-from .embed import embed
 import hashlib, os
-
 from typing import Any, Dict, List
 from json2markdown import convert_json_to_markdown_document as json2md
 from langchain_text_splitters import RecursiveCharacterTextSplitter, MarkdownHeaderTextSplitter
@@ -66,9 +64,9 @@ def upsert_report_to_chroma(
     company_id: str,
     talking_product_id: str,
     report_type: str,
-    date: str,              
-    date_range: tuple = None,
-    embed_fn=embed               
+    date: str,
+    embed_fn,
+    date_range: tuple = None
 ):
     # 1) Convert pydantic/dict → plain dict for json2md
     r = report.model_dump() if hasattr(report, "model_dump") else report
@@ -137,7 +135,7 @@ def upsert_report_to_chroma(
         embeddings=embeddings if embeddings else None,
     )
 
-def update_db_reports(data, report, report_type="Daily", company_id=None, talking_product_id=None, date_range=None):
+def update_db_reports(data, report, embed_fn, report_type="Daily", company_id=None, talking_product_id=None, date_range=None):
     """
     Save the generated daily report into the Relational database.
     data is the dict from parse_email()
@@ -166,7 +164,7 @@ def update_db_reports(data, report, report_type="Daily", company_id=None, talkin
     except Exception as e:
         print(f"⚠️ Error saving report for {data['date']}: {e}")
         return
-    upsert_report_to_chroma(report, company_id, talking_product_id, report_type, data['date'], date_range)
+    upsert_report_to_chroma(report, company_id, talking_product_id, report_type, data['date'], embed_fn, date_range)
     print(f"✅ Saved report for {data['date']}")
     return
 

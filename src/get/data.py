@@ -1,7 +1,7 @@
 
 from config import SUPABASE, COLLECTION
 from datetime import datetime
-from src.embed import embed
+from src.embed import embed_fn
 
 def get_active_company_ids():
     """
@@ -83,7 +83,7 @@ def get_latest_interaction_date(talking_product_id):
 
     return datetime.strptime(data[0]["date"], "%Y-%m-%d").date()
 
-def retrieve_context(query: str, company_id: str, talking_product_id: str | None, embed_fn = embed, k: int = 8, date=None, start_date=None, end_date=None):
+def retrieve_context(query: str, company_id: str, talking_product_id: str | None, embed_fn = embed_fn, k: int = 8, date=None, start_date=None, end_date=None):
     q_emb = embed_fn(query)
 
     clauses = [{"company_id": company_id}]
