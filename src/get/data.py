@@ -1,5 +1,6 @@
 
-from config import SUPABASE, COLLECTION
+from config import SUPABASE, COLLECTION, RETRIEVAL_K, READONLY_SQL_RPC
+from typing import List, Dict, Any
 from datetime import datetime
 from src.embed import embed_fn
 
@@ -83,7 +84,7 @@ def get_latest_interaction_date(talking_product_id):
 
     return datetime.strptime(data[0]["date"], "%Y-%m-%d").date()
 
-def retrieve_context(query: str, company_id: str, talking_product_id: str | None, embed_fn = embed_fn, k: int = 8, date=None, start_date=None, end_date=None):
+def retrieve_context(query: str, company_id: str, talking_product_id: str | None, embed_fn = embed_fn, k: int = RETRIEVAL_K, date=None, start_date=None, end_date=None):
     q_emb = embed_fn(query)
 
     clauses = [{"company_id": company_id}]
@@ -235,3 +236,11 @@ def rpc_paginate(rpc_name, params, batch_size=1000):
             break
 
     return all_rows
+
+def execute_readonly_sql(sql: str, rpc_name: str = READONLY_SQL_RPC) -> List[Dict[str, Any]]:
+    try:
+        res = SUPABASE.rpc(rpc_name, {"query": sql}).execute()
+    except Exception as e:
+        raise RuntimeError(f"SQL execution failed via RPC '{rpc_name}': {e}")
+
+    return res.data or []
