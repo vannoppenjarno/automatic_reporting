@@ -30,6 +30,7 @@ CREDENTIALS_FILE = "gmail/credentials.json"
 
 
 # ---------- Models ----------
+FREE_LOCAL_LLM_MODEL = "deepseek-r1"
 LLM_MODEL = "models/gemini-2.5-flash"
 EMBED_MODEL = "BAAI/bge-m3"
 TOKEN_ENCODING_MODEL = "cl100k_base"
@@ -38,10 +39,16 @@ LLM_API_KEY = os.getenv("LLM_API_KEY")
 
 # ---------- File paths ----------
 CSV_LOGS_DIR = "C:/Users/jarno/Desktop/Digiole/code/automatic_reporting/csv_logs"
-DAILY_PROMPT_TEMPLATE_PATH = "prompt_input/prompt_template.md"
-RAG_PROMPT_TEMPLATE_PATH = "prompt_input/rag_prompt.md"
+DAILY_PROMPT_PATH = "prompt_input/daily_prompt.md"
+SQL_PROMPT_PATH = "prompt_input/sql_prompt.md"
+LLM_PROMPT_PATH = "prompt_input/llm_prompt.md"
+RAG_PROMPT_PATH = "prompt_input/rag_prompt.md"
 REPORT_STRUCTURE_PATH = "prompt_input/report_structure.json"
 CONTEXT_PATH = "prompt_input/context.md"
+
+
+# ---------- SQL ----------
+READONLY_SQL_RPC = "execute_readonly_sql"
 
 
 # ---------- Adding company info ----------
