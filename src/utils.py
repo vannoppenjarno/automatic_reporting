@@ -216,6 +216,9 @@ def rows_to_context(rows: List[Dict[str, Any]]) -> str:
         "talking_product_id",
         "language",
         "name",
+        "report",
+        "n_logs",
+        "average_match",
     ]
     blocks = []
     for i, row in enumerate(rows, start=1):
@@ -240,6 +243,7 @@ def _strip_sql_fences(sql: str) -> str:
 
 def validate_readonly_sql(sql: str) -> str:
     cleaned = _strip_sql_fences(sql)
+    print(cleaned)
 
     if any(tok in cleaned for tok in _SQL_COMMENT_TOKENS):
         raise ValueError("SQL comments are not allowed.")
