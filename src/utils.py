@@ -1,11 +1,14 @@
-import numpy as np
+import re
 import hdbscan
 import tiktoken
+import numpy as np
 from collections import Counter
+from typing import List, Dict, Any
 from sklearn.metrics.pairwise import euclidean_distances
 
 from config import TOKEN_ENCODING_MODEL, CONTEXT_WINDOW, MIN_TOKENS_PER_CLUSTER
-from .get.templates import get_daily_prompt_template, get_context
+from .get.templates import get_daily_prompt, get_context
+
 
 def cluster_questions(data, min_cluster_size=2):
     """
@@ -40,12 +43,14 @@ def cluster_questions(data, min_cluster_size=2):
 
     return clusters, noise
 
+
 def count_tokens(text: str, model: str = TOKEN_ENCODING_MODEL) -> int:
     """
     Count the number of tokens in a given text using the specified model tokenizer.
     """
     encoding = tiktoken.get_encoding(model)
     return len(encoding.encode(text))
+
 
 def get_representative_questions(indices, questions, embeddings):
     """
@@ -82,6 +87,7 @@ def get_representative_questions(indices, questions, embeddings):
     else:
         return [freq_question, centroid_question]
 
+
 def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, min_tokens_per_cluster=MIN_TOKENS_PER_CLUSTER):
     """
     Dynamically format clustered logs for LLM input, scaling number of questions
@@ -104,7 +110,7 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
 
     # --- Load static prompt info ---
     context = get_context()
-    template_str = get_daily_prompt_template()
+    template_str = get_daily_prompt()
 
     # --- Count static tokens ---
     context_tokens = count_tokens(context)
@@ -195,8 +201,60 @@ def format_clusters_for_llm(data, clusters, noise, max_tokens=CONTEXT_WINDOW, mi
 
     return "\n".join(output_lines)
 
-    """
-    Format clusters for LLM using data['logs'].
-    
-    
-    """
+
+def rows_to_context(rows: List[Dict[str, Any]]) -> str:
+    if not rows:
+        return "No rows returned from the query."
+
+    fields = [
+        "id",
+        "date",
+        "time",
+        "question",
+        "answer",
+        "match_score",
+        "talking_product_id",
+        "language",
+        "name",
+    ]
+    blocks = []
+    for i, row in enumerate(rows, start=1):
+        parts = []
+        for key in fields:
+            if key in row and row[key] is not None:
+                parts.append(f"{key}={row[key]}")
+        blocks.append(f"[{i}] " + ", ".join(parts))
+    return "\n".join(blocks)
+
+
+_SQL_START_RE = re.compile(r"^\s*(with\b|select\b)", re.IGNORECASE)
+_SQL_BANNED_RE = re.compile(r"\b(insert|update|delete|drop|alter|create|pragma|attach|detach|truncate)\b", re.IGNORECASE)
+_SQL_COMMENT_TOKENS = ("--", "/*", "*/")
+def _strip_sql_fences(sql: str) -> str:
+    cleaned = sql.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```[a-zA-Z0-9]*\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+    return cleaned.strip()
+
+
+def validate_readonly_sql(sql: str) -> str:
+    cleaned = _strip_sql_fences(sql)
+
+    if any(tok in cleaned for tok in _SQL_COMMENT_TOKENS):
+        raise ValueError("SQL comments are not allowed.")
+
+    if ";" in cleaned:
+        cleaned = cleaned.rstrip()
+        if cleaned.endswith(";"):
+            cleaned = cleaned[:-1].rstrip()
+        if ";" in cleaned:
+            raise ValueError("Multiple SQL statements are not allowed.")
+
+    if not _SQL_START_RE.match(cleaned):
+        raise ValueError("SQL must start with SELECT or WITH.")
+
+    if _SQL_BANNED_RE.search(cleaned):
+        raise ValueError("SQL must be read-only.")
+
+    return cleaned
