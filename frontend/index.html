@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Digiole Reports</title>
+
+  <!-- Your CSS -->
+  <link rel="stylesheet" href="./src/style.css" />
+
+  <!-- Google Identity -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Markdown + Sanitizer (load before main.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" defer></script>
+
+  <!-- App JS -->
+  <script src="./src/main.js" defer></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-logo">D</div>
+        <div>
+          <div class="brand-name">Digiole Reports</div>
+          <div class="brand-subtitle">Business Intelligence Dashboard</div>
+        </div>
+      </div>
+      <div class="user-badge">D</div>
+    </header>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginSection">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Welcome</div>
+            <div class="card-subtitle">Sign in to view your reports</div>
+          </div>
+        </div>
+        <p>Use your Google account to access Digiole's reporting dashboard.</p>
+        <div id="g_id_onload"
+             data-client_id="634726700514-e1mk0mlff6lacdrs6f7a6shvlj9th6d3.apps.googleusercontent.com"
+             data-callback="onGoogleLogin">
+        </div>
+        <div class="g_id_signin" data-type="standard"></div>
+      </div>
+    </div>
+
+    <!-- NO ACCESS YET SCREEN -->
+    <div id="noAccessSection" style="display:none;">
+      <div class="card no-access">
+        <h2>Access pending</h2>
+        <p>Your user account has been created but is not yet linked to a company.</p>
+        <p class="muted">Please contact the admin to link your account, then refresh and log in again.</p>
+      </div>
+    </div>
+
+    <!-- APP SCREEN -->
+    <div id="appSection" style="display:none;">
+
+      <!-- Top header card -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Interaction Report</div>
+            <div class="card-subtitle">
+              Select a talking product and date to explore AI-generated insights.
+            </div>
+          </div>
+          <button id="openChatBtn" class="btn btn-outline">
+            💬 Discuss with AI
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters bar -->
+      <div class="filters-bar card">
+        <div class="filters-row">
+
+          <div class="filter">
+            <label>Talking Product</label>
+            <select id="products"></select>
+          </div>
+
+          <div class="filter">
+            <label>Report Type</label>
+            <div class="pill-tabs">
+              <button class="pill-tab active" data-type="daily">Daily</button>
+              <button class="pill-tab" data-type="weekly">Weekly</button>
+              <button class="pill-tab" data-type="monthly">Monthly</button>
+              <button class="pill-tab" data-type="aggregated">Aggregated</button>
+            </div>
+
+            <!-- hidden select used by JS -->
+            <select id="reportType" style="display:none;">
+              <option value="daily" selected>Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="aggregated">Aggregated</option>
+            </select>
+          </div>
+
+          <div class="filter">
+            <label>Date</label>
+            <input type="date" id="reportDate" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Report card (full width) -->
+      <div class="card report-card">
+        <div class="section-heading">
+          <span>REPORT</span>
+        </div>
+        <div id="report">
+          <p class="muted">Select a talking product and report to view AI-generated insights.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CHAT SECTION -->
+    <div id="chatSection" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Q&A Assistant</div>
+            <div class="card-subtitle">Ask questions about your reports and interactions.</div>
+          </div>
+          <button id="backToReportsBtn" class="btn btn-ghost">← Back to reports</button>
+        </div>
+
+        <div id="chatWindow"></div>
+
+        <div id="chatInputRow">
+          <input id="chatInput" type="text" placeholder="Ask a question about your reports..." />
+          <button id="sendChatBtn" class="btn btn-primary">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
