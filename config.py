@@ -31,7 +31,8 @@ CREDENTIALS_FILE = "gmail/credentials.json"
 
 # ---------- Models ----------
 FREE_LOCAL_LLM_MODEL = "deepseek-r1"
-LLM_MODEL = "models/gemini-2.5-flash"
+LLM_MODEL = "models/gemini-2.5-flash-lite"
+# LLM_MODEL = "models/gemini-2.5-flash"
 EMBED_MODEL = "BAAI/bge-m3"
 TOKEN_ENCODING_MODEL = "cl100k_base"
 LLM_API_KEY = os.getenv("LLM_API_KEY")
@@ -70,9 +71,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SUPABASE = create_client(SUPABASE_URL, SUPABASE_KEY)
 REPORT_TABLES = {
-    "daily": "Daily",
-    "weekly": "Weekly",
-    "monthly": "Monthly",
+    "daily": "daily",
+    "weekly": "weekly",
+    "monthly": "monthly",
     "aggregated": "aggregated",
 }
 
