@@ -31,8 +31,8 @@ FREE_LLM = get_free_local_llm()
 
 # Build the chains ONCE
 REPORT_CHAIN = REPORT_INFO | DAILY_PROMPT | LLM | parser
-SQL_CHAIN = SQL_PROMPT | FREE_LLM
-LLM_CHAIN = LLM_PROMPT | FREE_LLM
+SQL_CHAIN = SQL_PROMPT | LLM
+LLM_CHAIN = LLM_PROMPT | LLM
 RAG_CHAIN = RAG_PROMPT | LLM
 
 
@@ -56,12 +56,7 @@ def answer_with_rag(question: str, company_id: str, talking_product_id: str):
 
 
 def generate_readonly_sql(question: str, company_id: str) -> str:
-    resp = SQL_CHAIN.invoke(
-        {
-            "question": question,
-            "company_id": company_id,
-        }
-    )
+    resp = SQL_CHAIN.invoke({"question": question, "company_id": company_id})
     raw_sql = resp.content if hasattr(resp, "content") else str(resp)
     return validate_readonly_sql(raw_sql)
 
@@ -70,6 +65,5 @@ def answer_with_sql(question: str, company_id: str):
     sql = generate_readonly_sql(question, company_id)
     rows = execute_readonly_sql(sql)
     context = rows_to_context(rows)
-    print(sql)
     print(context)
     return LLM_CHAIN.invoke({"question": question, "sql": sql, "context": context})
