@@ -23,7 +23,7 @@ def update_db_interactions(data, company_id=None, talking_product_id=None):
         S = log["match_score"]
         D = log["date"]
         T = log["time"]
-        L = log["language"]
+        # L = log["language"]
         E = log["embedding"]
 
         # 1️⃣ Supabase insert (Relational DB)
@@ -52,7 +52,7 @@ def update_db_interactions(data, company_id=None, talking_product_id=None):
                 "date": D,
                 "time": T,
                 "match_score": S,
-                "language": L
+                # "language": L
             }],
             embeddings=[E]
         )
