@@ -27,18 +27,19 @@ def update_db_interactions(data, company_id=None, talking_product_id=None):
         E = log["embedding"]
 
         # 1️⃣ Supabase insert (Relational DB)
-        try:
-            SUPABASE.table("interactions").insert({
-                "date": D,
-                "time": T,
-                "question": Q,
-                "answer": A,
-                "match_score": S,
-                "language": L,
-                "talking_product_id": talking_product_id
-            }).execute()
-        except Exception as e:
-            print(f"⚠️ Duplicate or error: {Q[:30]}... {e}")
+        # Commented out since we now have Prifina's ingestion!
+        # try:
+        #     SUPABASE.table("interactions").insert({
+        #         "date": D,
+        #         "time": T,
+        #         "question": Q,
+        #         "answer": A,
+        #         "match_score": S,
+        #         "language": L,
+        #         "talking_product_id": talking_product_id
+        #     }).execute()
+        # except Exception as e:
+        #     print(f"⚠️ Duplicate or error: {Q[:30]}... {e}")
 
         # 2️⃣ Chroma Cloud (Vector DB)
         COLLECTION.upsert(
