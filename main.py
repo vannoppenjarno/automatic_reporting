@@ -84,14 +84,14 @@ if __name__ == "__main__":
             if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
                 one_week_ago = today.date() - timedelta(days=6)
                 date_range = (one_week_ago, today.date())
-                main_aggregate(date_range, report_type="Weekly", talking_product_id=talking_product_id)
+                main_aggregate(date_range, report_type="weekly", talking_product_id=talking_product_id)
 
             # 1.2. Monthly aggregation
             last_day = calendar.monthrange(today.year, today.month)[1]  # Get the last day of the current month
             if today.day == last_day:  # If today is the end of the month
                 first_day_this_month = today.replace(day=1)
                 date_range = (first_day_this_month.date(), today.date())
-                main_aggregate(date_range, report_type="Monthly", talking_product_id=talking_product_id)
+                main_aggregate(date_range, report_type="monthly", talking_product_id=talking_product_id)
 
     # 2. Process CSV logs for all files in the CSV_LOGS_DIR
     try:
