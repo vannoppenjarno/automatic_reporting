@@ -172,7 +172,6 @@ def fetch_questions(date_range, talking_product_id=None, company_id=None):
                 "match_score": s,
                 "date": r["date"],
                 "time": r["interaction_time"],
-                "embedding": r.get("embedding")
             })
 
             accumulated_match += s
