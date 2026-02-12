@@ -8,9 +8,8 @@ from pydantic import BaseModel
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
-from src.prompt import answer_with_rag
-from src.get.data import retrieve_context
-from config import SUPABASE, RETRIEVAL_K, REPORT_TABLES, GOOGLE_CLIENT_ID
+from src.prompt import answer_with_rag, answer_with_sql
+from config import SUPABASE, REPORT_TABLES, GOOGLE_CLIENT_ID
 
 # ----------------- Setup -----------------
 
@@ -293,14 +292,9 @@ def ask_rag(
     if req.talking_product_id:
         ensure_product_belongs_to_company(req.talking_product_id, current_user.company_id)
 
-    context, citations = retrieve_context(
-        query=req.question,
-        company_id=current_user.company_id,
-        talking_product_id=req.talking_product_id,
-        k=RETRIEVAL_K,
-    )
-
-    resp = answer_with_rag(req.question, context)
+    # resp, citations = answer_with_rag(req.question, current_user.company_id, req.talking_product_id)
+    resp = answer_with_sql(req.question, current_user.company_id)
+    citations = []
 
     answer_text = resp.content if hasattr(resp, "content") else str(resp)
 
