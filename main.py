@@ -8,16 +8,23 @@ from src.store import update_db_interactions, update_db_reports
 from src.get.data import get_active_company_ids, get_active_talking_product_ids, get_latest_interaction_date, get_ids, get_company_id, fetch_questions
 from src.utils import cluster_questions, format_clusters_for_llm
 
-def main_daily(company_id, talking_product_id):
-    emails_by_date, service = fetch_emails()  # TODO has to change in the future based in the company_id and talking_product_id
-    if not emails_by_date:
-        print("No new emails found.")
-        return
+def main_daily(date_range, company_id, talking_product_id):
+    # emails_by_date, service = fetch_emails()  # Commented out because new Prifina Ingestion, but if used later: fetch emails based on the company_id and talking_product_id
+    # if not emails_by_date:
+    #     print("No new emails found.")
+    #     return
+    
+    # for date, email_list in emails_by_date.items():
+        # data = parse_email(date, email_list, service)
 
-    for date, email_list in emails_by_date.items():
-        data = parse_email(date, email_list, service)
+        data = fetch_questions(date_range, talking_product_id=talking_product_id, company_id=company_id)
+
+        if not data or data["n_logs"] == 0:
+            print(f"No questions found for date range {date_range}.")
+            return
+
         data = add_question_embeddings(data)  # Embed questions in the data
-        update_db_interactions(data, company_id, talking_product_id)  # Store interactions in both the relational and vector DB
+        update_db_interactions(data, company_id, talking_product_id)  # Store interactions in the vector DB
 
         clusters, noise = cluster_questions(data)  # Cluster questions based on embeddings
         logs_text = format_clusters_for_llm(data, clusters, noise)
@@ -25,7 +32,7 @@ def main_daily(company_id, talking_product_id):
 
         # Generate structured daily report with LLM
         report = generate_report(logs_text)
-        update_db_reports(data, report, embed_fn, talking_product_id=talking_product_id)  # Save interactions + report in the SQLite database
+        update_db_reports(data, report, embed_fn, talking_product_id=talking_product_id)  # Save report to DB
 
 def main_aggregate(date_range, report_type, talking_product_id=None, company_id=None):
     """Generate aggregated reports (Weekly, Monthly, or custom) for a given date range, talking product id and company id. The talking product id should correspond to the correct company id."""
@@ -70,7 +77,8 @@ if __name__ == "__main__":
     for company_id in active_company_ids:
         active_talking_product_ids = get_active_talking_product_ids(company_id)
         for talking_product_id in active_talking_product_ids:
-            main_daily(company_id, talking_product_id)
+            date_range = (today.date(), today.date())
+            main_daily(date_range, company_id, talking_product_id)
 
             # 1.1. Weekly aggregation
             if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
