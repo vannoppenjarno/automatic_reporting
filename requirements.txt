@@ -1,11 +1,43 @@
-simplegmail==4.1.1        # from PyPI :contentReference[oaicite:0]{index=0}
-beautifulsoup4             # version not pinned (you may add one if you have a preference)
-scikit-learn               # version not pinned (add one if you have constraints)
-google-genai
-numpy                      # version not pinned (commonly used)
-tiktoken                   # version not pinned (add one if you have a preference)
-supabase==2.22.0           # from PyPI :contentReference[oaicite:2]{index=2}
-chromadb==1.1.0            # latest release noted as 1.1.0 :contentReference[oaicite:3]{index=3}
-sentence-transformers      # version not pinned (since compatibility may depend on your PyTorch version) :contentReference[oaicite:4]{index=4}
-hdbscan==0.8.40            # from PyPI :contentReference[oaicite:5]{index=5}
-python-dotenv              # for `dotenv` import (version not pinned)
+# --- Core utilities ---
+python-dotenv==1.0.1
+numpy==1.26.4
+tiktoken==0.7.0
+pydantic==2.8.2
+typing-extensions==4.12.2
+
+# --- Email / parsing ---
+simplegmail==4.1.1
+beautifulsoup4==4.12.3
+langid==1.1.6
+
+# --- Google APIs (Gmail + OAuth) ---
+google-api-python-client==2.137.0
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+google-auth-httplib2==0.2.0
+google-genai==0.3.0
+
+# --- Database / storage ---
+supabase==2.22.0
+chromadb==1.1.0
+
+# --- LangChain ecosystem ---
+langchain-core==0.2.43
+langchain-text-splitters==0.2.2
+langchain-google-genai==1.0.8
+langchain-ollama==0.1.1
+
+# --- Embeddings / clustering ---
+sentence-transformers==3.0.1
+scikit-learn==1.5.1
+hdbscan==0.8.40
+
+# --- Markdown conversion ---
+json2markdown==0.1.3
+
+# --- API backend ---
+fastapi==0.112.0
+uvicorn==0.30.6
+
+# --- Optional but recommended runtime utilities ---
+requests==2.32.3
