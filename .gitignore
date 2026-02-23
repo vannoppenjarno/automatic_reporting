@@ -1,5 +1,6 @@
 # ignore markdown files
 *.md
+!README.md
 
 # ignore json files
 *.json
