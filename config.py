@@ -68,8 +68,16 @@ MANUAL_AGGREGATION_COMPANY_NAME = ""
 
 # ---------- Supabase Settings ----------
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-SUPABASE = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")  # Use ANON only for frontend/dev use-cases
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")  # Use SERVICE ROLE for backend cron/reporting (bypasses RLS)
+
+if not SUPABASE_URL:
+    raise RuntimeError("Missing SUPABASE_URL")
+
+if not SUPABASE_SERVICE_ROLE_KEY:
+    raise RuntimeError("Missing SUPABASE_SERVICE_ROLE_KEY (required for reporting with RLS)")
+
+SUPABASE = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 REPORT_TABLES = {
     "daily": "daily",
     "weekly": "weekly",
