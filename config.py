@@ -12,6 +12,7 @@ MIN_TOKENS_PER_CLUSTER = 200
 SCORE_IMPORTANCE = 0.5
 LANG_CONFIDENCE_THRESHOLD = 0.5  # Minimum confidence for language detection
 RETRIEVAL_K = 10  # Number of documents to retrieve for RAG
+MAX_CONTEXT_CHARS = 25000 
 
 
 # ---------- Chunking ----------
