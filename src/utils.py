@@ -1,13 +1,107 @@
 import re
+import csv
+import langid
 import hdbscan
 import tiktoken
 import numpy as np
+from datetime import datetime
 from collections import Counter
 from typing import List, Dict, Any
 from sklearn.metrics.pairwise import euclidean_distances
 
-from config import TOKEN_ENCODING_MODEL, CONTEXT_WINDOW, MIN_TOKENS_PER_CLUSTER
+from config import LANG_CONFIDENCE_THRESHOLD, TOKEN_ENCODING_MODEL, CONTEXT_WINDOW, MIN_TOKENS_PER_CLUSTER
 from .get.templates import get_daily_prompt, get_context
+
+
+def parse_csv_logs(csv_path, min_date_exclusive=None):
+    """
+    Read Talking Product CSV logs and produce the same aggregated data structure
+    as parse_email(), but allow multiple dates inside one CSV.
+
+    If min_date_exclusive is provided (datetime.date), any CSV rows whose date
+    is <= min_date_exclusive will be ignored.
+    """
+    complete_misses = 0
+    accumulated_match = 0
+    logs = []
+
+    with open(csv_path, mode="r", encoding="utf-8") as f:
+        reader = csv.DictReader(
+            f,
+            delimiter=",",
+            quotechar='"',
+            escapechar="\\",
+            skipinitialspace=True,
+        )
+        rows = list(reader)
+
+    # Build structure grouped by date
+    for row in rows:
+        datetime_str = row["Date/Time"].strip()
+        dt = datetime.strptime(datetime_str, "%d/%m/%Y, %H:%M:%S")
+
+        # Date used in DB: "YYYY-MM-DD"
+        date = dt.strftime("%Y-%m-%d")
+        time = dt.strftime("%H:%M:%S")
+
+        # Filter out already-processed dates: remove all rows with date <= latest date
+        if min_date_exclusive is not None:
+            if dt.date() <= min_date_exclusive:
+                continue  # skip this row entirely
+
+        question = row["Statement"].strip()
+        answer = row["Answer"].strip()
+        raw_score = row["Score"].strip().replace("%", "")
+        try:
+            match_score = float(raw_score)
+        except:
+            print("SCORE PARSE ERROR:", raw_score, row)
+            raise
+
+        if match_score == 0:
+            complete_misses += 1
+
+        accumulated_match += match_score
+
+        logs.append(
+            {
+                "question": question,
+                "answer": answer,
+                "match_score": match_score,
+                "date": date,
+                "time": time,
+                "language": detect_language(question),
+            }
+        )
+
+    n_logs = len(logs)
+    complete_misses_rate = round((complete_misses / n_logs) * 100, 2) if n_logs > 0 else 0
+    average_match = round(accumulated_match / n_logs, 2) if n_logs > 0 else 0
+
+    data = {
+        "date": datetime.today().strftime("%Y-%m-%d"),  # Timestamp of CSV ingestion
+        "n_logs": n_logs,
+        "average_match": average_match,
+        "complete_misses": complete_misses,
+        "complete_misses_rate": complete_misses_rate,
+        "logs": logs,
+    }
+
+    return data
+
+
+def detect_language(text: str):
+    """
+    Detect language using langid.
+    Returns a 2-letter ISO code (e.g. 'nl', 'en', 'fr') or None if confidence is low.
+    """
+    if not text or not text.strip():
+        return None
+
+    lang, prob = langid.classify(text)
+    if prob < LANG_CONFIDENCE_THRESHOLD:
+        return None
+    return lang
 
 
 def cluster_questions(data, min_cluster_size=2):

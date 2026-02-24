@@ -1,12 +1,10 @@
 import calendar, os, glob
-from datetime import datetime
-from datetime import timedelta
-from src.fetch import fetch_emails, parse_email, parse_csv_logs
+from datetime import datetime, timedelta
 from src.embed import embed_fn, add_question_embeddings
 from src.prompt import generate_report
 from src.store import update_db_interactions, update_db_reports
 from src.get.data import get_active_company_ids, get_active_talking_product_ids, get_latest_interaction_date, get_ids, get_company_id, fetch_questions
-from src.utils import cluster_questions, format_clusters_for_llm
+from src.utils import cluster_questions, format_clusters_for_llm, parse_csv_logs
 
 def main_daily(date_range, company_id, talking_product_id):
     # emails_by_date, service = fetch_emails()  # Commented out because new Prifina Ingestion, but if used later: fetch emails based on the company_id and talking_product_id
@@ -110,3 +108,4 @@ if __name__ == "__main__":
     if MANUAL_AGGREGATION_ENABLED:
         company_id = get_company_id(MANUAL_AGGREGATION_COMPANY_NAME)
         main_aggregate(MANUAL_AGGREGATION_DATE_RANGE, report_type="aggregated", company_id=company_id)
+

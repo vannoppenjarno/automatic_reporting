@@ -1,10 +1,8 @@
+from email.utils import parsedate_to_datetime
 from collections import defaultdict
 from bs4 import BeautifulSoup
 from datetime import datetime
-from email.utils import parsedate_to_datetime
 import base64
-import csv
-import langid
 import os.path
 
 from google.oauth2.credentials import Credentials
@@ -12,7 +10,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-from config import SUBJECT_PATTERN, SENDER_PATTERN, LANG_CONFIDENCE_THRESHOLD, SCOPES, TOKEN_FILE, CREDENTIALS_FILE
+from config import SUBJECT_PATTERN, SENDER_PATTERN, SCOPES, TOKEN_FILE, CREDENTIALS_FILE
+from src.utils import detect_language
 
 
 # ----------------------------
@@ -179,20 +178,6 @@ def fetch_emails():
     return sorted_emails, service
 
 
-def detect_language(text: str):
-    """
-    Detect language using langid.
-    Returns a 2-letter ISO code (e.g. 'nl', 'en', 'fr') or None if confidence is low.
-    """
-    if not text or not text.strip():
-        return None
-
-    lang, prob = langid.classify(text)
-    if prob < LANG_CONFIDENCE_THRESHOLD:
-        return None
-    return lang
-
-
 def parse_email(date, email_list, service):
     """
     Parse a list of emails for a specific date, extract Q&A logs and metrics,
@@ -255,80 +240,3 @@ def parse_email(date, email_list, service):
 
     return data
 
-
-# parse_csv_logs stays unchanged
-def parse_csv_logs(csv_path, min_date_exclusive=None):
-    """
-    Read Talking Product CSV logs and produce the same aggregated data structure
-    as parse_email(), but allow multiple dates inside one CSV.
-
-    If min_date_exclusive is provided (datetime.date), any CSV rows whose date
-    is <= min_date_exclusive will be ignored.
-    """
-    complete_misses = 0
-    accumulated_match = 0
-    logs = []
-
-    with open(csv_path, mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(
-            f,
-            delimiter=",",
-            quotechar='"',
-            escapechar="\\",
-            skipinitialspace=True,
-        )
-        rows = list(reader)
-
-    # Build structure grouped by date
-    for row in rows:
-        datetime_str = row["Date/Time"].strip()
-        dt = datetime.strptime(datetime_str, "%d/%m/%Y, %H:%M:%S")
-
-        # Date used in DB: "YYYY-MM-DD"
-        date = dt.strftime("%Y-%m-%d")
-        time = dt.strftime("%H:%M:%S")
-
-        # Filter out already-processed dates: remove all rows with date <= latest date
-        if min_date_exclusive is not None:
-            if dt.date() <= min_date_exclusive:
-                continue  # skip this row entirely
-
-        question = row["Statement"].strip()
-        answer = row["Answer"].strip()
-        raw_score = row["Score"].strip().replace("%", "")
-        try:
-            match_score = float(raw_score)
-        except:
-            print("SCORE PARSE ERROR:", raw_score, row)
-            raise
-
-        if match_score == 0:
-            complete_misses += 1
-
-        accumulated_match += match_score
-
-        logs.append(
-            {
-                "question": question,
-                "answer": answer,
-                "match_score": match_score,
-                "date": date,
-                "time": time,
-                "language": detect_language(question),
-            }
-        )
-
-    n_logs = len(logs)
-    complete_misses_rate = round((complete_misses / n_logs) * 100, 2) if n_logs > 0 else 0
-    average_match = round(accumulated_match / n_logs, 2) if n_logs > 0 else 0
-
-    data = {
-        "date": datetime.today().strftime("%Y-%m-%d"),  # Timestamp of CSV ingestion
-        "n_logs": n_logs,
-        "average_match": average_match,
-        "complete_misses": complete_misses,
-        "complete_misses_rate": complete_misses_rate,
-        "logs": logs,
-    }
-
-    return data
