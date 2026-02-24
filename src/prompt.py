@@ -2,9 +2,10 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
 from .get.templates import get_daily_prompt, get_sql_prompt, get_llm_prompt, get_rag_prompt, get_context
-from .get.data import execute_readonly_sql, retrieve_context 
+from .get.data import execute_readonly_sql, retrieve_context, fetch_questions 
 from .get.models import get_llm_model, get_free_local_llm
 from .utils import rows_to_context, validate_readonly_sql
+from config import MAX_CONTEXT_CHARS 
 from .report import Report
 
 
@@ -67,3 +68,13 @@ def answer_with_sql(question: str, company_id: str):
     context = rows_to_context(rows)
     print(context)
     return LLM_CHAIN.invoke({"question": question, "sql": sql, "context": context})
+
+
+def answer_directly(question, company_id, talking_product_id, date_range):
+    data = fetch_questions(date_range, talking_product_id=talking_product_id, company_id=company_id)
+    logs = data["logs"]
+    context = rows_to_context(logs)
+    if len(context) > MAX_CONTEXT_CHARS:
+        context = context[:MAX_CONTEXT_CHARS]
+    return LLM_CHAIN.invoke({"question": question, "sql": None, "context": context})
+
