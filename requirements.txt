@@ -1,43 +1,17 @@
-# --- Core utilities ---
-python-dotenv==1.0.1
-numpy==1.26.4
-tiktoken==0.7.0
-pydantic==2.8.2
-typing-extensions==4.12.2
-
-# --- Email / parsing ---
-simplegmail==4.1.1
-beautifulsoup4==4.12.3
-langid==1.1.6
-
-# --- Google APIs (Gmail + OAuth) ---
-google-api-python-client==2.137.0
-google-auth==2.35.0
-google-auth-oauthlib==1.2.1
-google-auth-httplib2==0.2.0
-google-genai==0.3.0
-
-# --- Database / storage ---
-supabase==2.22.0
 chromadb==1.1.0
-
-# --- LangChain ecosystem ---
+fastapi==0.112.0
+hdbscan==0.8.40
+json2markdown==0.1.1
 langchain-core==0.2.43
-langchain-text-splitters==0.2.2
 langchain-google-genai==1.0.8
 langchain-ollama==0.1.1
-
-# --- Embeddings / clustering ---
-sentence-transformers==3.0.1
+langchain-text-splitters==0.2.2
+langid==1.1.6
+numpy==1.26.4
+pydantic==2.8.2
+python-dotenv==1.0.1
 scikit-learn==1.5.1
-hdbscan==0.8.40
-
-# --- Markdown conversion ---
-json2markdown==0.1.1
-
-# --- API backend ---
-fastapi==0.112.0
-uvicorn==0.30.6
-
-# --- Optional but recommended runtime utilities ---
-requests==2.32.3
+sentence-transformers==3.0.1
+supabase==2.22.0
+supabase-auth==2.22.0
+tiktoken==0.7.0
