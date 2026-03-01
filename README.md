@@ -140,10 +140,11 @@ This gives more budget to large clusters with lower average match score (higher 
 
 ## Scheduling
 
-To run the pipeline automatically every day:
+The pipeline is scheduled with **GitHub Actions**.
 
-- Windows: Use Task Scheduler
-  - Trigger: Daily (e.g. just before midnight or after data refresh)
-  - Action: Run `python main.py` with “Start in” set to the project folder
-- Linux/macOS: Use cron
-  - Example: `0 0 * * * /path/to/python /path/to/project/main.py`
+- Workflow file: `.github/workflows/reports.yml`
+- Daily trigger: `cron: "20 0 * * *"` (runs at **00:20 UTC** every day)
+- Manual trigger: `workflow_dispatch` from the Actions tab
+
+If you fork this repo, configure the required repository secrets used by the workflow (`SUPABASE_URL`, `SUPABASE_KEY`, `CHROMA_KEY`, `CHROMA_TENANT`, `LLM_API_KEY`, etc.) before enabling scheduled runs.
+
