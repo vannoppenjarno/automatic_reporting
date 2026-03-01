@@ -69,26 +69,27 @@ def main_csv(csv_file, company_id, talking_product_id):
 
 if __name__ == "__main__":
     today = datetime.today()
+    yesterday = today - timedelta(days=1)
 
     # 1. Process daily reports for all active talking products
     active_company_ids = get_active_company_ids()
     for company_id in active_company_ids:
         active_talking_product_ids = get_active_talking_product_ids(company_id)
         for talking_product_id in active_talking_product_ids:
-            date_range = (today.date(), today.date())
+            date_range = (yesterday.date(), yesterday.date())
             main_daily(date_range, company_id, talking_product_id)
 
             # 1.1. Weekly aggregation
-            if today.weekday() == 6:  # If today is Sunday (Monday=0, Sunday=6)
-                one_week_ago = today.date() - timedelta(days=6)
-                date_range = (one_week_ago, today.date())
+            if yesterday.weekday() == 6:  # If yesterday was Sunday (Monday=0, Sunday=6)
+                one_week_ago = yesterday.date() - timedelta(days=6)
+                date_range = (one_week_ago, yesterday.date())
                 main_aggregate(date_range, report_type="weekly", talking_product_id=talking_product_id)
 
             # 1.2. Monthly aggregation
-            last_day = calendar.monthrange(today.year, today.month)[1]  # Get the last day of the current month
-            if today.day == last_day:  # If today is the end of the month
-                first_day_this_month = today.replace(day=1)
-                date_range = (first_day_this_month.date(), today.date())
+            last_day = calendar.monthrange(yesterday.year, yesterday.month)[1]  # Get the last day of the current month
+            if yesterday.day == last_day:  # If yesterday was the end of the month
+                first_day_this_month = yesterday.replace(day=1)
+                date_range = (first_day_this_month.date(), yesterday.date())
                 main_aggregate(date_range, report_type="monthly", talking_product_id=talking_product_id)
 
     # 2. Process CSV logs for all files in the CSV_LOGS_DIR
