@@ -1,11 +1,10 @@
-import hashlib, os
+import hashlib
 from typing import Any, Dict, List
 from json2markdown import convert_json_to_markdown_document as json2md
 from langchain_text_splitters import RecursiveCharacterTextSplitter, MarkdownHeaderTextSplitter
 from langchain_core.documents import Document
 
 from config import SUPABASE, COLLECTION, CHUNK_SIZE, CHUNK_OVERLAP
-from .get.data import get_company_id
 
 def interaction_id(talking_product_id: str, date: str, time: str, question: str) -> str:
     q_hash = hashlib.md5(question.encode("utf-8")).hexdigest()
@@ -168,53 +167,3 @@ def update_db_reports(data, report, embed_fn, report_type="daily", company_id=No
     upsert_report_to_chroma(report, company_id, talking_product_id, report_type, data['date'], embed_fn, date_range)
     print(f"✅ Saved report for {data['date']}")
     return
-
-def add_company(name: str):
-    """Add a company name and return its id."""
-    ins = (
-        SUPABASE.table("companies")
-        .insert({"name": name})
-        .execute()
-    )
-    return ins.data[0]["id"]
-
-def add_talking_product(company_name: str, product_name: str, admin_url=None, url=None, qr_code=None):
-    """Insert a talking product by company name, fetch company id first."""
-    # 1) Get company id
-    company_id = get_company_id(company_name)
-
-    # 2) Build insert payload
-    payload = {
-        "company_id": company_id,
-        "name": product_name,
-        "admin_url": admin_url,
-        "url": url,
-        "qr_code": qr_code
-    }
-
-    # 3) Insert talking product (ignore if exists)
-    ins = (
-        SUPABASE.table("talking_products")
-        .insert(payload)
-        .execute()
-    )
-
-    return ins.data[0]["id"]
-
-
-
-if __name__ == "__main__":
-    # run store.py directly to add a company and its talking products from env vars
-    company = os.getenv("COMPANY_NAME")
-    company_id = get_company_id(company)
-    if company_id is None:
-        company_id = add_company(company)
-    talking_products = os.getenv("TALKING_PRODUCTS").split(",")
-    admin_urls = os.getenv("TALKING_PRODUCT_ADMIN_URLS", "").split(",")
-    urls = os.getenv("TALKING_PRODUCT_URLS", "").split(",")
-    qr_codes = os.getenv("TALKING_PRODUCT_QR_CODES", "").split(",")
-    for i, p in enumerate(talking_products):
-        admin_url = admin_urls[i] if i < len(admin_urls) else None
-        url = urls[i] if i < len(urls) else None
-        qr_code = qr_codes[i] if i < len(qr_codes) else None
-        add_talking_product(company, p, admin_url=admin_url, url=url, qr_code=qr_code)
