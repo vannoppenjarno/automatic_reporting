@@ -2,13 +2,13 @@
 
 This project generates reports based on interaction data. It fetches interaction logs from Supabase (and optionally CSV files), clusters and summarizes questions with an LLM pipeline, stores daily reports in Supabase, and indexes both interactions and reports in Chroma Cloud. It also produces **weekly and monthly summaries** by aggregating interaction data over date ranges.
 
-Note: Email fetching is deprecated. Also frontend and backend development/test components are deprecated and not part of the active flow.
+Note: Email fetching, frontend and old backend related code are deprecated and not part of the active flow. Still, an experimental / local prototype backend for the "Ask AI" functionality in Pulse CXM is present. Also, interactions ingestion is now done by Supabase edge function from Prifina (pipeline consumes Supabase as source of truth) 
 
 ---
 
 ## Features
 
-* **Automated Data Collection:** Fetches interaction logs from Supabase via RPC (`fetch_interactions_filtered`) for active companies/talking products; can also ingest CSV logs from `CSV_LOGS_DIR`.
+* **Automated Data Collection:** Fetches interaction logs from Supabase via RPC (`fetch_interactions_filtered`) for active companies/talking products; can also ingest CSV logs from `CSV_LOGS_DIR`. Supabase interactions are populated by Prifina ingestion edge function (15-min cron); this repo does not ingest from Prifina directly. CSV ingestion is for backfill/custom ranges; doesn’t write to Supabase by default (currently commented out).
 * **Log Parsing & Enrichment:** Parses question/answer/match-score/time records, detects language for CSV ingestion, and adds vector embeddings to questions.
 * **LLM-Powered Reports:** Generates structured reports using LangChain prompts + Pydantic schema with Gemini (and optional local Ollama model configured).
 * **Database Integration:** Stores report payloads in Supabase tables (`daily`, `weekly`, `monthly`, `aggregated`).
@@ -117,7 +117,7 @@ This gives more budget to large clusters with lower average match score (higher 
 
 ## Design Choices
 
-- Daily reports run per active talking product for the current date.
+- Daily reports run for yesterday (UTC) per active talking product; scheduled at 00:20 UTC.
 - Weekly report runs every Sunday (`today.weekday() == 6`) for the previous 7-day window.
 - Monthly report runs on the last day of each month for that month-to-date window.
 - Reports are structured JSON validated by Pydantic (`src/report.py`) for consistent schema.
@@ -128,15 +128,29 @@ This gives more budget to large clusters with lower average match score (higher 
 
 ---
 
-## Potential Improvements
-
-* Add evaluation metrics for report quality, retrieval relevance, and cluster coherence.
-* Improve clustering quality with parameter tuning and/or hybrid semantic + lexical grouping.
-* Add stronger metadata filtering for retrieval by `doc_type`, `report_type`, and date windows.
-* Add automated backfill and replay tooling for large historical reprocessing.
-* Replace hardcoded absolute paths (e.g. `CSV_LOGS_DIR`) with environment-driven paths.
+## Operational Dependencies
+- Supabase RPCs required: fetch_interactions_filtered, execute_readonly_sql
+- Supabase tables used: daily/weekly/monthly/aggregated + interactions
+- GitHub Actions schedule + required secrets
+- Chroma Cloud required unless disabled
 
 ---
+
+## Potential Improvements
+- Token underuse / reallocation improvements (prompt_filter branch)
+- Output repair/retry strategy for Pydantic schema drift (missing decision_required)
+- Language detection: upsert to interactions, track frequencies, report visualization
+- Retrieval filters in Chroma: filter by doc_type, report_type, date windows
+- Router for Ask AI (SQL vs RAG vs mixed) — even if outside pipeline, it touches prompt.py functions
+
+---
+
+## How to run locally
+- pip install -r requirements.txt
+- .env required keys
+- Ensure Supabase has the RPCs
+- Run python main.py
+- For backend prototype: uvicorn backend:app --reload
 
 ## Scheduling
 
